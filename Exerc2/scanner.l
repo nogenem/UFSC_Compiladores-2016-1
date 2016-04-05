@@ -15,6 +15,7 @@ digs [0-9]+
 [ \t]               ; //ignores spaces
 {digs}              {yylval.integer = std::atoi(yytext); return T_INT;}
 "+"                 {return T_PLUS;}
+"*"					{return T_MULTIPLY;}
 \n                  {return T_NL;}
 .                   {yyerror("Unknown token! %c\n", *yytext);} /*complains about every unknown character*/
 

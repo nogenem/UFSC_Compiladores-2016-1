@@ -11,7 +11,8 @@ void Integer::printTree(){
 void BinOp::printTree(){
     left->printTree();
     switch(op){
-        case plus: std::cout << " + ";
+        case plus: std::cout << " + "; break; 
+        case multiply: std::cout << " * "; break;
     }
     right->printTree();
     return;
@@ -34,7 +35,8 @@ int BinOp::computeTree(){
     lvalue = left->computeTree();
     rvalue = right->computeTree();
     switch(op){
-         case plus: value = lvalue + rvalue;
+         case plus: value = lvalue + rvalue; break; 
+         case multiply: value = lvalue * rvalue; break; 
     }
     return value;
 }
