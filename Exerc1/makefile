@@ -1,0 +1,41 @@
+# Variaveis
+CC = gcc
+FLAGS = -Wall -g -c
+LINKS = -lfl
+EXE = calcFrac.exe
+
+BISONFILE = flexBison/calc.y
+GENERATED_BISONFILE = calc.tab
+
+FLEXFILE = flexBison/calc.l
+GENERATED_FLEXFILE = calc.yy
+
+# Regras
+all: All
+
+debugdir:
+	mkdir -p ./bin/Debug ./obj/Debug
+
+$(GENERATED_BISONFILE).o: $(GENERATED_BISONFILE).cpp $(GENERATED_BISONFILE).hpp
+	$(CC) $(FLAGS) $(GENERATED_BISONFILE).cpp -o obj/Debug/$(GENERATED_BISONFILE).o
+
+$(GENERATED_FLEXFILE).o: $(GENERATED_FLEXFILE).cpp
+	$(CC) $(FLAGS) $(GENERATED_FLEXFILE).cpp -o obj/Debug/$(GENERATED_FLEXFILE).o
+
+$(GENERATED_BISONFILE).cpp $(GENERATED_BISONFILE).hpp:	$(BISONFILE)
+	bison -o$(GENERATED_BISONFILE).cpp --defines=$(GENERATED_BISONFILE).hpp $(BISONFILE)
+
+$(GENERATED_FLEXFILE).cpp: $(FLEXFILE) $(GENERATED_BISONFILE).hpp
+	flex -o$(GENERATED_FLEXFILE).cpp $(FLEXFILE)
+
+All: $(GENERATED_FLEXFILE).cpp $(GENERATED_BISONFILE).cpp $(GENERATED_BISONFILE).hpp
+	$(CC) -o $(EXE) $(GENERATED_BISONFILE).cpp $(GENERATED_FLEXFILE).cpp $(LINKS)
+
+Debug: debugdir $(GENERATED_FLEXFILE).o $(GENERATED_BISONFILE).o
+	$(CC) -o bin/Debug/$(EXE) obj/Debug/$(GENERATED_FLEXFILE).o obj/Debug/$(GENERATED_BISONFILE).o $(LINKS)
+
+cleanAll:
+	rm $(EXE) $(GENERATED_BISONFILE).cpp $(GENERATED_FLEXFILE).cpp $(GENERATED_BISONFILE).hpp
+
+cleanDebug:
+	rm ./bin/Debug/$(EXE) ./obj/Debug/*.o
