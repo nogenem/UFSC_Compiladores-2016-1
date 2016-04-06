@@ -1,25 +1,27 @@
 # My Little Makefile
 FLEX=flex
+FLEXFILE=flexBison/scanner.l
+
 BISON=bison
+BISONFILE=flexBison/parser.y
+
 CC=clang++
-PARAM=-std=c++11 -fcxx-exceptions -Wno-deprecated-register
+PARAM=-std=gnu++11 -Wno-deprecated-register -Iinclude/ -I../Include/ -Isrc/
 OUTPUT=myparse
 
 all: flex yacc clang
 
-clang: *.cpp *.h
-	${CC} -o ${OUTPUT} *.cpp ${LLVMPARAM} ${PARAM}
+clang: src/*.cpp include/*.h
+	${CC} -o ${OUTPUT} ${PARAM} src/*.cpp *.cpp ${LLVMPARAM}
 
-yacc: parser.y
-	${BISON} --defines=parser.h --output=parser.cpp parser.y
+yacc: ${BISONFILE}
+	${BISON} --defines=include/parser.h --output=src/parser.cpp ${BISONFILE}
 
-flex: scanner.l
-	${FLEX} -o scanner.cpp scanner.l 
+flex: ${FLEXFILE}
+	${FLEX} -o src/scanner.cpp ${FLEXFILE}
 
 clean:
-	rm parser.cpp parser.h scanner.cpp ${OUTPUT}
+	rm src/parser.cpp include/parser.h src/scanner.cpp ${OUTPUT}
 
 test: all
 	./${OUTPUT} < input_example
-
-
