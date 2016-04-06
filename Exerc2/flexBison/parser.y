@@ -1,9 +1,11 @@
 %{
 #include "ast.h"
+
 AST::Block *programRoot; /* the root node of our program AST:: */
 extern int yylex();
 extern void yyerror(const char* s, ...);
-void print(const char *msg, AST::Node *a, AST::Node *b);
+
+void print(const char *format, ...);
 %}
 
 /* yylval == %union
@@ -34,7 +36,7 @@ void print(const char *msg, AST::Node *a, AST::Node *b);
 %left T_MULTIPLY
 %nonassoc error
 
-/* Starting rule 
+/* Starting rule
  */
 %start program
 
@@ -42,19 +44,22 @@ void print(const char *msg, AST::Node *a, AST::Node *b);
 
 program : lines { programRoot = $1; }
         ;
-        
 
-lines   : line { $$ = new AST::Block(); $$->lines.push_back($1); std::printf("New line found.\n"); }
-        | lines line { if($2 != NULL) $1->lines.push_back($2); }
+
+lines   : line { $$ = new AST::Block(); $$->lines.push_back($1); printf("New block created.\n"); }
+        | lines line { if($2 != NULL) { $1->lines.push_back($2); printf("New line found.\n\n"); } }
         ;
 
-line    : T_NL { $$ = NULL; std::printf("Nothing here to be used.\n"); } /*nothing here to be used */
+line    : T_NL { $$ = NULL; printf("Nothing here to be used.\n"); } /*nothing here to be used */
         | expr T_NL /*$$ = $1 when nothing is said*/
         ;
 
-expr    : T_INT { $$ = new AST::Integer($1); std::printf("Int value found.\n"); }
-        | expr T_PLUS expr { $$ = new AST::BinOp($1,AST::plus,$3); print("Plus operation found (%d + %d).\n", $1, $3); }
-        | expr T_MULTIPLY expr { $$ = new AST::BinOp($1,AST::multiply,$3); print("Multiply operation found (%d * %d).\n", $1, $3); }
+expr    : T_INT { $$ = new AST::Integer($1);
+                        print("Int value found (%d).\n", $$->computeTree()); }
+        | expr T_PLUS expr { $$ = new AST::BinOp($1, AST::plus, $3);
+                        print("Plus operation found (%d + %d).\n", $1->computeTree(), $3->computeTree()); }
+        | expr T_MULTIPLY expr { $$ = new AST::BinOp($1, AST::multiply, $3);
+                        print("Multiply operation found (%d * %d).\n", $1->computeTree(), $3->computeTree()); }
         | expr error { yyerrok; $$ = $1; } /*just a point for error recovery*/
         ;
 
@@ -63,7 +68,10 @@ expr    : T_INT { $$ = new AST::Integer($1); std::printf("Int value found.\n"); 
 // fazer definição de variaveis
 // usando HASH
 
-void print(const char *msg, AST::Node *a, AST::Node *b){
-    int n = a->computeTree(), m = b->computeTree();
-    std::printf(msg, n, m);
+//http://www.cplusplus.com/reference/cstdio/vprintf/
+void print(const char *format, ...){
+    va_list args;
+    va_start (args, format);
+    vprintf (format, args);
+    va_end (args);
 }

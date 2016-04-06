@@ -2,7 +2,9 @@
 #include <string>
 #include "ast.h"
 #include "parser.h"
+
 extern int yylineno;
+
 void yyerror(const char* s, ...);
 %}
 
@@ -15,8 +17,9 @@ digs [0-9]+
 [ \t]               ; //ignores spaces
 {digs}              {yylval.integer = std::atoi(yytext); return T_INT;}
 "+"                 {return T_PLUS;}
-"*"					{return T_MULTIPLY;}
+"*"					        {return T_MULTIPLY;}
 \n                  {return T_NL;}
+"exit"              {exit(0);}
 .                   {yyerror("Unknown token! %c\n", *yytext);} /*complains about every unknown character*/
 
 %%
