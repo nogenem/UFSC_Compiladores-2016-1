@@ -1,8 +1,8 @@
-﻿# Calculadora de frações
+# Calculadora de frações
 
-Operações da calculadora:
-	-Soma
-	-Subtração
-	-Multiplicação
-	-Divisão
-	-Exponenciação
+Operações:
+  - Soma
+  - Subtração
+  - Multiplicação
+  - Divisão
+  - Exponenciação
