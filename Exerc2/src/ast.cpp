@@ -8,10 +8,15 @@ void Integer::printTree(){
     return;
 }
 
+void Identifier::printTree(){
+  std::cout << name << " = " << value;
+  return;
+}
+
 void BinOp::printTree(){
     left->printTree();
     switch(op){
-        case plus: std::cout << " + "; break; 
+        case plus: std::cout << " + "; break;
         case multiply: std::cout << " * "; break;
     }
     right->printTree();
@@ -30,13 +35,17 @@ int Integer::computeTree(){
     return value;
 }
 
+int Identifier::computeTree(){
+  return value;
+}
+
 int BinOp::computeTree(){
     int value, lvalue, rvalue;
     lvalue = left->computeTree();
     rvalue = right->computeTree();
     switch(op){
-         case plus: value = lvalue + rvalue; break; 
-         case multiply: value = lvalue * rvalue; break; 
+         case plus: value = lvalue + rvalue; break;
+         case multiply: value = lvalue * rvalue; break;
     }
     return value;
 }

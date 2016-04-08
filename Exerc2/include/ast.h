@@ -27,6 +27,18 @@ class Integer : public Node {
         int computeTree();
 };
 
+class Identifier : public Node {
+  public:
+    std::string name;
+    int value;
+    Identifier(std::string name) : name(name), value(0) { }
+    Identifier(std::string name, int value) : name(name), value(value) { }
+    void printTree();
+    int computeTree();
+
+    void setValue(int v){ value = v; }
+};
+
 class BinOp : public Node {
     public:
         Operation op;
@@ -47,4 +59,3 @@ class Block : public Node {
 };
 
 }
-
