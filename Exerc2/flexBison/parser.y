@@ -5,6 +5,7 @@ AST::Block *programRoot; /* the root node of our program AST:: */
 extern int yylex();
 extern void yyerror(const char* s, ...);
 
+void binOpFound(AST::Node *&r,  AST::Node *a, AST::Operation op, AST::Node *b);
 void print(const char *format, ...);
 %}
 
@@ -42,11 +43,12 @@ void print(const char *format, ...);
 
 %%
 
-program : lines { programRoot = $1; }
+program : lines { programRoot = $1; printf("ProgramRoot assigned.\n\n"); }
         ;
 
 
-lines   : line { $$ = new AST::Block(); $$->lines.push_back($1); printf("New block created.\n"); }
+lines   : line { $$ = new AST::Block(); $$->lines.push_back($1);
+                      printf("New block created and new line found.\n\n"); }
         | lines line { if($2 != NULL) { $1->lines.push_back($2); printf("New line found.\n\n"); } }
         ;
 
@@ -56,17 +58,26 @@ line    : T_NL { $$ = NULL; printf("Nothing here to be used.\n"); } /*nothing he
 
 expr    : T_INT { $$ = new AST::Integer($1);
                         print("Int value found (%d).\n", $$->computeTree()); }
-        | expr T_PLUS expr { $$ = new AST::BinOp($1, AST::plus, $3);
-                        print("Plus operation found (%d + %d).\n", $1->computeTree(), $3->computeTree()); }
-        | expr T_MULTIPLY expr { $$ = new AST::BinOp($1, AST::multiply, $3);
-                        print("Multiply operation found (%d * %d).\n", $1->computeTree(), $3->computeTree()); }
+        | expr T_PLUS expr { binOpFound($$, $1, AST::plus, $3); }
+        | expr T_MULTIPLY expr { binOpFound($$, $1, AST::multiply, $3); }
         | expr error { yyerrok; $$ = $1; } /*just a point for error recovery*/
         ;
 
 %%
 
-// fazer definição de variaveis
-// usando HASH
+void binOpFound(AST::Node *&r,  AST::Node *a, AST::Operation op, AST::Node *b){
+  r = new AST::BinOp(a, op, b);
+  switch (op) {
+    case AST::plus:
+      print("Plus operation found (%d + %d).\n", a->computeTree(), b->computeTree());
+      break;
+    case AST::multiply:
+      print("Multiply operation found (%d * %d).\n", a->computeTree(), b->computeTree());
+      break;
+    default:
+      break;
+  }
+}
 
 //http://www.cplusplus.com/reference/cstdio/vprintf/
 void print(const char *format, ...){
