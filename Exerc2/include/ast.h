@@ -31,12 +31,17 @@ class Identifier : public Node {
   public:
     std::string name;
     int value;
-    Identifier(std::string name) : name(name), value(0) { }
-    Identifier(std::string name, int value) : name(name), value(value) { }
+    Identifier *nextIdent;
+
+    Identifier(std::string name) : name(name), value(0), nextIdent(nullptr) { }
+    Identifier(std::string name, int value) : name(name), value(value), nextIdent(nullptr) { }
     void printTree();
     int computeTree();
 
+    std::string getName(){ return name; }
     void setValue(int v){ value = v; }
+    void setNextIdent(Identifier *next){ nextIdent = next; }
+    Identifier* getNextIdent(){ return nextIdent; }
 };
 
 class BinOp : public Node {

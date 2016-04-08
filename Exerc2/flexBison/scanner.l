@@ -13,15 +13,16 @@ void yyerror(const char* s, ...);
 digs [0-9]+
 
 %%
-
 [ \t]               ; //ignores spaces
 {digs}              {yylval.integer = std::atoi(yytext); return T_INT;}
 "exit"              {return 0;}
+"def"               {return T_DEF;}
 [a-z_][a-z0-9_]*    {yylval.identifier = new std::string(yytext); return T_IDENT;}
 "+"                 {return T_PLUS;}
+","                 {return T_VIRGULA;}
 "*"					        {return T_MULTIPLY;}
 "="                 {return T_ASSIGNMENT;}
-\n                  {return T_NL;}
+[\n\r]              {return T_NL;}
 .                   {yyerror("Unknown token! %c\n", *yytext);} /*complains about every unknown character*/
 
 %%

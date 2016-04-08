@@ -10,6 +10,10 @@ void Integer::printTree(){
 
 void Identifier::printTree(){
   std::cout << name << " = " << value;
+  if(nextIdent != nullptr){
+    std::cout << ", ";
+    nextIdent->printTree();
+  }
   return;
 }
 
@@ -54,7 +58,7 @@ int Block::computeTree(){
     int value;
     for (Node* line: lines) {
         value = line->computeTree();
-         std::cout << "Computed " << value << std::endl;
+        std::cout << "Computed " << value << std::endl;
     }
     return 0;
 }
