@@ -59,4 +59,3 @@ class Variable : public Node {
 };
 
 }
-

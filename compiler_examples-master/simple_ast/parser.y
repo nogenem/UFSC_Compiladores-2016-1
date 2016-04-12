@@ -14,6 +14,7 @@ extern void yyerror(const char* s, ...);
  */
 %union {
     int integer;
+    double Double;
     AST::Node *node;
     AST::Block *block;
     const char *name;
@@ -22,9 +23,10 @@ extern void yyerror(const char* s, ...);
 /* token defines our terminal symbols (tokens).
  */
 %token <integer> T_INT
+%token <Double> T_DOUBLE
 %token T_PLUS T_NL T_COMMA
-%token T_DEF T_ASSIGN
-%token <name> T_ID
+%token T_ASSIGN
+%token <name> T_ID T_TYPE
 
 /* type defines the type of our nonterminal symbols.
  * Types should match the names used in the union.
@@ -40,7 +42,7 @@ extern void yyerror(const char* s, ...);
 %left T_TIMES
 %nonassoc error
 
-/* Starting rule 
+/* Starting rule
  */
 %start program
 
@@ -55,7 +57,7 @@ lines   : line { $$ = new AST::Block(); $$->lines.push_back($1); }
 
 line    : T_NL { $$ = NULL; } /*nothing here to be used */
         | expr T_NL /*$$ = $1 when nothing is said*/
-        | T_DEF varlist T_NL { $$ = $2; }
+        | T_TYPE varlist T_NL { $$ = symtab.setType($2, $1); }
         | T_ID T_ASSIGN expr {  AST::Node* node = symtab.assignVariable($1);
                                 $$ = new AST::BinOp(node,AST::assign,$3); }
         ;
@@ -72,5 +74,3 @@ varlist : T_ID { $$ = symtab.newVariable($1, NULL); }
         ;
 
 %%
-
-

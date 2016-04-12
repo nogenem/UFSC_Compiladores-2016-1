@@ -2,7 +2,7 @@
 FLEX=flex
 BISON=bison
 CC=clang++
-PARAM=-std=c++11 -fcxx-exceptions -Wno-deprecated-register
+PARAM=-std=gnu++11 -Wno-deprecated-register -Iinclude/ -I../Include/ -Isrc/
 OUTPUT=myparse
 
 all: flex yacc clang
@@ -14,12 +14,10 @@ yacc: parser.y
 	${BISON} --defines=parser.h --output=parser.cpp parser.y
 
 flex: scanner.l
-	${FLEX} -o scanner.cpp scanner.l 
+	${FLEX} -o scanner.cpp scanner.l
 
 clean:
 	rm parser.cpp parser.h scanner.cpp ${OUTPUT}
 
 test: all
 	./${OUTPUT} < input_example
-
-
