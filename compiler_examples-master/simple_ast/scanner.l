@@ -14,14 +14,14 @@ chars [a-z]+
 %%
 
 [ \t]                           ; //ignores spaces
-{digs}                          {yylval.integer = std::atoi(yytext); return T_INT;}
-{digs}\.{digs}                  {yylval.Double = std::atof(yytext); return T_DOUBLE;}
+{digs}\.{digs}                  {yylval.double_v = std::atof(yytext); return DOUBLE_V;}
+{digs}                          {yylval.int_v = std::atoi(yytext); return INT_V;}
 "+"                             {return T_PLUS;}
 "*"                             {return T_TIMES;}
 ","                             {return T_COMMA;}
 "="                             {return T_ASSIGN;}
 \n                              {return T_NL;}
-"int"|"double"|"float"|"long"   {yylval.name = strdup(yytext); return T_TYPE;}
+"int"|"double"                  {yylval.name = strdup(yytext); return T_TYPE;}
 "exit"                          {return 0;}
 {chars}                         {yylval.name = strdup(yytext); return T_ID;}
 .                               {yyerror("Unknown token! %c\n", *yytext);} /*complains about every unknown character*/

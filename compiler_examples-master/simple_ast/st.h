@@ -3,6 +3,7 @@
 
 #include <map>
 #include "ast.h"
+#include "Variant_t.h"
 
 extern void yyerror(const char* s, ...);
 
@@ -10,20 +11,17 @@ namespace ST {
 
 class Symbol;
 
-enum Type { Integer, Double, Float, Long };
 enum Kind { variable };
 
 typedef std::map<std::string,Symbol> SymbolList; //Set of Symbols
 
 class Symbol {
     public:
-        Type type;              /*[Return] type of Symbol: integer, double.*/
         Kind kind;              /*Kind of symbol: variable, function, etc.*/
-        int64_t value;        /*Space to store a value while we are doing interpretation.*/
+        VAR::Variant_t value;   /*Space to store a value while we are doing interpretation.*/
         bool initialized;       /*Defines if symbol has been initialized or not.*/
-        Symbol(Type type, Kind kind, int64_t value, bool initialized) :
-            type(type), kind(kind), value(value), initialized(initialized) {  }
-        Symbol() {type = Integer; kind = variable; value = 0; initialized = false;}
+        Symbol() : kind(variable), value(), initialized(false) {}
+        Symbol(Kind k) : kind(k), value(), initialized(false) {}
 };
 
 class SymbolTable {

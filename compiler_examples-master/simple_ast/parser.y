@@ -13,8 +13,8 @@ extern void yyerror(const char* s, ...);
  * union informs the different ways we can store data
  */
 %union {
-    int integer;
-    double Double;
+    int int_v;
+    double double_v;
     AST::Node *node;
     AST::Block *block;
     const char *name;
@@ -22,8 +22,8 @@ extern void yyerror(const char* s, ...);
 
 /* token defines our terminal symbols (tokens).
  */
-%token <integer> T_INT
-%token <Double> T_DOUBLE
+%token <int_v> INT_V
+%token <double_v> DOUBLE_V
 %token T_PLUS T_NL T_COMMA
 %token T_ASSIGN
 %token <name> T_ID T_TYPE
@@ -51,8 +51,9 @@ extern void yyerror(const char* s, ...);
 program : lines { programRoot = $1; }
         ;
 
-lines   : line { $$ = new AST::Block(); $$->lines.push_back($1); }
+lines   : line { $$ = new AST::Block(); if($1 != NULL) $$->lines.push_back($1); }
         | lines line { if($2 != NULL) $1->lines.push_back($2); }
+        | lines error T_NL { yyerrok; }
         ;
 
 line    : T_NL { $$ = NULL; } /*nothing here to be used */
@@ -62,11 +63,11 @@ line    : T_NL { $$ = NULL; } /*nothing here to be used */
                                 $$ = new AST::BinOp(node,AST::assign,$3); }
         ;
 
-expr    : T_INT { $$ = new AST::Integer($1); }
+expr    : INT_V { $$ = new AST::Integer($1); }
+        | DOUBLE_V { $$ = new AST::Double($1); }
         | T_ID { $$ = symtab.useVariable($1); }
         | expr T_PLUS expr { $$ = new AST::BinOp($1,AST::plus,$3); }
         | expr T_TIMES expr { $$ = new AST::BinOp($1,AST::times,$3); }
-        | expr error { yyerrok; $$ = $1; } /*just a point for error recovery*/
         ;
 
 varlist : T_ID { $$ = symtab.newVariable($1, NULL); }

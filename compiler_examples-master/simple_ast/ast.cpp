@@ -7,7 +7,12 @@ extern ST::SymbolTable symtab;
 
 /* Print methods */
 void Integer::printTree(){
-    std::cout << value;
+    std::cout << value.getIntValue();
+    return;
+}
+
+void Double::printTree(){
+    std::cout << value.getDoubleValue();
     return;
 }
 
@@ -38,12 +43,16 @@ void Variable::printTree(){
 }
 
 /* Compute methods */
-int Integer::computeTree(){
+VAR::Variant_t Integer::computeTree(){
     return value;
 }
 
-int BinOp::computeTree(){
-    int value, lvalue, rvalue;
+VAR::Variant_t Double::computeTree(){
+    return value;
+}
+
+VAR::Variant_t BinOp::computeTree(){
+    VAR::Variant_t value, lvalue, rvalue;
     lvalue = left->computeTree();
     rvalue = right->computeTree();
     switch(op){
@@ -57,15 +66,18 @@ int BinOp::computeTree(){
     return value;
 }
 
-int Block::computeTree(){
-    int value;
+VAR::Variant_t Block::computeTree(){
+    VAR::Variant_t value;
     for (Node* line: lines) {
         value = line->computeTree();
-         std::cout << "Computed " << value << std::endl;
+        switch (value.getType()) {
+          case VAR::integer_t: std::cout << "Computed " << value.getIntValue() << std::endl; break;
+          case VAR::double_t: std::cout << "Computed " << value.getDoubleValue() << std::endl; break;
+        }
     }
-    return 0;
+    return VAR::Variant_t(0);
 }
 
-int Variable::computeTree(){
+VAR::Variant_t Variable::computeTree(){
     return symtab.entryList[id].value;
 }

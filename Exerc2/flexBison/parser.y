@@ -94,10 +94,12 @@ expr    : T_INT { $$ = new AST::Integer($1);
 %%
 
 /*
-  v1 = Soma dois inteiros
-  v2 = multiplicação e debug
-  v2.1 = uso de variaveis em expressoes [def var, var...]
-  v2.2 = atribuição
+  v0.1 = Soma dois inteiros
+  v0.2 = multiplicação e debug
+  v0.2.1 = uso de variaveis em expressoes [def var, var...]
+  v0.2.2 = atribuição
+  v0.4 = Definição de tipos [int a]
+  v0.5 = Definição de escopos
 */
 
 void buildVarBlock(AST::Node *&r, AST::Node *& a, AST::Node *& b){

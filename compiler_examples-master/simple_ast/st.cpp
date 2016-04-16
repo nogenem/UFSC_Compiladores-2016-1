@@ -7,26 +7,22 @@ extern SymbolTable symtab;
 AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next){
     if ( checkId(id) ) yyerror("Variable redefinition! %s\n", id.c_str());
     else {
-       Symbol entry(Integer, variable, 0, false);
+       Symbol entry(variable);
        addSymbol(id,entry); //Adds variable to symbol table
     }
     return new AST::Variable(id, next); //Creates variable node anyway
 }
 
 AST::Node* SymbolTable::setType(AST::Node *node, std::string type){
-  Type t;
+  VAR::Type t;
   if(type == "int")
-    t = Integer;
+    t = VAR::integer_t;
   else if(type == "double")
-    t = Double;
-  else if(type == "long")
-    t = Long;
-  else if(type == "float")
-    t = Float;
+    t = VAR::double_t;
 
   AST::Variable *tmp = (AST::Variable*) node;
   while(tmp != NULL){
-      entryList[tmp->id].type = t;
+      entryList[tmp->id].value.setType(t);
       tmp = (AST::Variable*) tmp->next;
   }
   return node;
