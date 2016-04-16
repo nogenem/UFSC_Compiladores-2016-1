@@ -4,6 +4,13 @@ using namespace ST;
 
 extern SymbolTable symtab;
 
+void Symbol::setValue(VAR::Variant_t v){
+  switch (v.getType()) {
+    case VAR::integer_t: _value.setValue(v.getIntValue()); break;
+    case VAR::double_t: _value.setValue(v.getDoubleValue()); break;
+  }
+}
+
 AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next){
     if ( checkId(id) ) yyerror("Variable redefinition! %s\n", id.c_str());
     else {
@@ -22,7 +29,7 @@ AST::Node* SymbolTable::setType(AST::Node *node, std::string type){
 
   AST::Variable *tmp = (AST::Variable*) node;
   while(tmp != NULL){
-      entryList[tmp->id].value.setType(t);
+      entryList[tmp->id].getValue().setType(t);
       tmp = (AST::Variable*) tmp->next;
   }
   return node;

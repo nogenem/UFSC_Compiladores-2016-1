@@ -1,4 +1,5 @@
 #include "Variant_t.h"
+#include <iostream>
 
 using namespace VAR;
 
@@ -12,7 +13,7 @@ void Variant_t::setType(Type t){
 
 void Variant_t::setValue(double v){
   switch (_type) {
-    case integer_t: _int_v = v; break;
+    case integer_t: _int_v = (int)v; break;
     case double_t: _double_v = v; break;
   }
 }

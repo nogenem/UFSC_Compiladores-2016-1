@@ -60,8 +60,8 @@ VAR::Variant_t BinOp::computeTree(){
         case times: value = lvalue * rvalue; break;
         case assign:
             Variable* leftvar = dynamic_cast<Variable*>(left);
-            symtab.entryList[leftvar->id].value = rvalue;
-            value = rvalue;
+            symtab.entryList[leftvar->id].setValue(rvalue);
+            value = symtab.entryList[leftvar->id].getValue();
     }
     return value;
 }
@@ -79,5 +79,5 @@ VAR::Variant_t Block::computeTree(){
 }
 
 VAR::Variant_t Variable::computeTree(){
-    return symtab.entryList[id].value;
+    return symtab.entryList[id].getValue();
 }

@@ -18,10 +18,14 @@ typedef std::map<std::string,Symbol> SymbolList; //Set of Symbols
 class Symbol {
     public:
         Kind kind;              /*Kind of symbol: variable, function, etc.*/
-        VAR::Variant_t value;   /*Space to store a value while we are doing interpretation.*/
         bool initialized;       /*Defines if symbol has been initialized or not.*/
-        Symbol() : kind(variable), value(), initialized(false) {}
-        Symbol(Kind k) : kind(k), value(), initialized(false) {}
+        Symbol() : kind(variable), _value(), initialized(false) {}
+        Symbol(Kind k) : kind(k), _value(), initialized(false) {}
+
+        void setValue(VAR::Variant_t v);
+        VAR::Variant_t& getValue(){return _value;}
+    private:
+      VAR::Variant_t _value;   /*Space to store a value while we are doing interpretation.*/
 };
 
 class SymbolTable {

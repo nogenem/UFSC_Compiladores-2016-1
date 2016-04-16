@@ -1,7 +1,6 @@
-double a, b
-a = 15.5
-b = 10.5
-int c, d
-c = 5
-d = 2
-a = a * b + c * d
+int a
+a = 5
+double b
+b = 5.5
+a = a * b
+b = a + b
