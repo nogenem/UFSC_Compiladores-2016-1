@@ -4,10 +4,7 @@
 #include <iostream>
 #include <vector>
 #include "Variant_t.h"
-
-//http://stackoverflow.com/questions/4788965/when-would-anyone-use-a-union-is-it-a-remnant-from-the-c-only-days
-//http://www.cplusplus.com/doc/tutorial/other_data_types/
-//http://en.cppreference.com/w/cpp/language/union
+#include "st.h"
 
 extern void yyerror(const char *s, ...);
 
@@ -66,7 +63,10 @@ class Variable : public Node {
      public:
          std::string id;
          Node *next;
-         Variable(std::string id, Node *next) : id(id), next(next) { }
+         ST::SymbolTable *scope;//variavel guarda em qual escopo ela foi criada/chamada
+
+         Variable(std::string id, Node *next, ST::SymbolTable *scope) :
+              id(id), next(next), scope(scope) { }
          void printTree();
          VAR::Variant_t computeTree();
 };

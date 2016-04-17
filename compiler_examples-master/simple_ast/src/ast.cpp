@@ -1,9 +1,8 @@
 #include "ast.h"
-#include "st.h"
 
 using namespace AST;
 
-extern ST::SymbolTable symtab;
+extern ST::SymbolTable *symtab;
 
 /* Print methods */
 void Integer::printTree(){
@@ -60,8 +59,9 @@ VAR::Variant_t BinOp::computeTree(){
         case times: value = lvalue * rvalue; break;
         case assign:
             Variable* leftvar = dynamic_cast<Variable*>(left);
-            symtab.entryList[leftvar->id].setValue(rvalue);
-            value = symtab.entryList[leftvar->id].getValue();
+            leftvar->scope->getSymbol(leftvar->id).setValue(rvalue);
+            value = leftvar->scope->getSymbol(leftvar->id).getValue();
+            break;
     }
     return value;
 }
@@ -75,9 +75,9 @@ VAR::Variant_t Block::computeTree(){
           case VAR::double_t: std::cout << "Computed " << value.getDoubleValue() << std::endl; break;
         }
     }
-    return VAR::Variant_t(0);
+    return VAR::Variant_t();
 }
 
 VAR::Variant_t Variable::computeTree(){
-    return symtab.entryList[id].getValue();
+    return scope->getSymbol(id).getValue();
 }

@@ -20,6 +20,8 @@ chars [a-z]+
 "*"                             {return T_TIMES;}
 ","                             {return T_COMMA;}
 "="                             {return T_ASSIGN;}
+"{"                             {return C_LEFT;}
+"}"                             {return C_RIGHT;}
 [\n\r]                          {return T_NL;}
 "int"|"double"                  {yylval.name = strdup(yytext); return T_TYPE;}
 "exit"                          {return 0;}

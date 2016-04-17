@@ -1,7 +1,7 @@
 %{
 #include "ast.h"
 #include "st.h"
-ST::SymbolTable symtab;  /* main symbol table */
+ST::SymbolTable *symtab = new ST::SymbolTable();  /* main symbol table */
 AST::Block *programRoot; /* the root node of our program AST:: */
 extern int yylex();
 extern void yyerror(const char* s, ...);
@@ -24,7 +24,7 @@ extern void yyerror(const char* s, ...);
  */
 %token <int_v> INT_V
 %token <double_v> DOUBLE_V
-%token T_PLUS T_NL T_COMMA
+%token T_PLUS T_NL T_COMMA C_LEFT C_RIGHT
 %token T_ASSIGN
 %token <name> T_ID T_TYPE
 
@@ -58,20 +58,22 @@ lines   : line { $$ = new AST::Block(); if($1 != NULL) $$->lines.push_back($1); 
 
 line    : T_NL { $$ = NULL; } /*nothing here to be used */
         | expr T_NL /*$$ = $1 when nothing is said*/
-        | T_TYPE varlist T_NL { $$ = symtab.setType($2, $1); }
-        | T_ID T_ASSIGN expr {  AST::Node* node = symtab.assignVariable($1);
+        | C_LEFT T_NL {$$ = NULL; symtab = new ST::SymbolTable(symtab); }//cria um novo escopo
+        | C_RIGHT T_NL {$$ = NULL; symtab = symtab->getPrevious(); }//pega o escopo anterior
+        | T_TYPE varlist T_NL { $$ = symtab->setType($2, $1); }
+        | T_ID T_ASSIGN expr {  AST::Node* node = symtab->assignVariable($1);
                                 $$ = new AST::BinOp(node,AST::assign,$3); }
         ;
 
 expr    : INT_V { $$ = new AST::Integer($1); }
         | DOUBLE_V { $$ = new AST::Double($1); }
-        | T_ID { $$ = symtab.useVariable($1); }
+        | T_ID { $$ = symtab->useVariable($1); }
         | expr T_PLUS expr { $$ = new AST::BinOp($1,AST::plus,$3); }
         | expr T_TIMES expr { $$ = new AST::BinOp($1,AST::times,$3); }
         ;
 
-varlist : T_ID { $$ = symtab.newVariable($1, NULL); }
-        | varlist T_COMMA T_ID { $$ = symtab.newVariable($3, $1); }
+varlist : T_ID { $$ = symtab->newVariable($1, NULL); }
+        | varlist T_COMMA T_ID { $$ = symtab->newVariable($3, $1); }
         ;
 
 %%

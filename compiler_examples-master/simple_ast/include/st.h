@@ -2,10 +2,11 @@
 #pragma once
 
 #include <map>
-#include "ast.h"
 #include "Variant_t.h"
 
 extern void yyerror(const char* s, ...);
+
+namespace AST{ class Node; }// Odeio 'circular reference'...
 
 namespace ST {
 
@@ -30,15 +31,23 @@ class Symbol {
 
 class SymbolTable {
     public:
-        SymbolList entryList;
-        SymbolTable() {}
+        SymbolTable() : _previous(nullptr) {}
+        SymbolTable(SymbolTable *prev) : _previous(prev) {}
+        ~SymbolTable() {}
         /*checkId returns true if the variable has been defined and false if it does not exist*/
-        bool checkId(std::string id) {return entryList.find(id) != entryList.end();}
-        void addSymbol(std::string id, Symbol newsymbol) {entryList[id] = newsymbol;}
+        bool checkId(std::string id, bool creation=false);
+        void addSymbol(std::string id, Symbol newsymbol);
         AST::Node* newVariable(std::string id, AST::Node* next);
         AST::Node* assignVariable(std::string id);
         AST::Node* useVariable(std::string id);
         AST::Node* setType(AST::Node *node, std::string type);
+
+        SymbolList& getEntryList(){return _entryList;}
+        SymbolTable* getPrevious(){return _previous;}
+        Symbol& getSymbol(std::string id);
+    private:
+      SymbolList _entryList;
+      SymbolTable *_previous;
 };
 
 }
