@@ -13,6 +13,6 @@ int main(int argc, char **argv)
     std::cout << "##Printing the lines" << std::endl;
     programRoot->printTree();   //prints the ASTs
     std::cout << "##Computing the lines" << std::endl;
-    programRoot->computeTree(); //computes the ASTs
+    programRoot->computeTree(NULL); //computes the ASTs
     return 0;
 }

@@ -1,7 +1,7 @@
 %{
 #include "ast.h"
 #include "st.h"
-ST::SymbolTable *symtab = new ST::SymbolTable();  /* main symbol table */
+ST::SymbolTable *symtab = new ST::SymbolTable(NULL);  /* main symbol table */
 AST::Block *programRoot; /* the root node of our program AST:: */
 extern int yylex();
 extern void yyerror(const char* s, ...);
@@ -32,7 +32,7 @@ extern void yyerror(const char* s, ...);
  * Types should match the names used in the union.
  * Example: %type<node> expr
  */
-%type <node> expr line varlist
+%type <node> expr line varlist scope
 %type <block> lines program
 
 /* Operator precedence for mathematical operators
@@ -51,19 +51,22 @@ extern void yyerror(const char* s, ...);
 program : lines { programRoot = $1; }
         ;
 
-lines   : line { $$ = new AST::Block(); if($1 != NULL) $$->lines.push_back($1); }
+lines   : line { if($1 == NULL) symtab = new ST::SymbolTable(symtab); /*gambiarra?!*/
+                  $$ = new AST::Block(symtab);
+                  if($1 != NULL) $$->lines.push_back($1); }
         | lines line { if($2 != NULL) $1->lines.push_back($2); }
         | lines error T_NL { yyerrok; }
         ;
 
 line    : T_NL { $$ = NULL; } /*nothing here to be used */
         | expr T_NL /*$$ = $1 when nothing is said*/
-        | C_LEFT T_NL {$$ = NULL; symtab = new ST::SymbolTable(symtab); }//cria um novo escopo
-        | C_RIGHT T_NL {$$ = NULL; symtab = symtab->getPrevious(); }//pega o escopo anterior
+        | scope { $$ = $1; }
         | T_TYPE varlist T_NL { $$ = symtab->setType($2, $1); }
         | T_ID T_ASSIGN expr {  AST::Node* node = symtab->assignVariable($1);
                                 $$ = new AST::BinOp(node,AST::assign,$3); }
         ;
+
+scope : C_LEFT lines C_RIGHT T_NL { $$ = $2; symtab = symtab->getPrevious(); }
 
 expr    : INT_V { $$ = new AST::Integer($1); }
         | DOUBLE_V { $$ = new AST::Double($1); }

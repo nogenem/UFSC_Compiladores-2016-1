@@ -21,7 +21,7 @@ class Node {
     public:
         virtual ~Node() {}
         virtual void printTree(){}
-        virtual VAR::Variant_t computeTree(){return VAR::Variant_t();}
+        virtual VAR::Variant_t computeTree(ST::SymbolTable *scope){return VAR::Variant_t();}
 };
 
 class Integer : public Node {
@@ -29,7 +29,7 @@ class Integer : public Node {
         VAR::Variant_t value;
         Integer(int value) : value(value) {  }
         void printTree();
-        VAR::Variant_t computeTree();
+        VAR::Variant_t computeTree(ST::SymbolTable *scope);
 };
 
 class Double : public Node {
@@ -37,7 +37,7 @@ class Double : public Node {
         VAR::Variant_t value;
         Double(double value) : value(value) {  }
         void printTree();
-        VAR::Variant_t computeTree();
+        VAR::Variant_t computeTree(ST::SymbolTable *scope);
 };
 
 class BinOp : public Node {
@@ -48,27 +48,28 @@ class BinOp : public Node {
         BinOp(Node *left, Operation op, Node *right) :
             left(left), right(right), op(op) { }
         void printTree();
-        VAR::Variant_t computeTree();
+        VAR::Variant_t computeTree(ST::SymbolTable *scope);
 };
 
 class Block : public Node {
     public:
         NodeList lines;
-        Block() { }
+        ST::SymbolTable *scope;
+
+        Block(ST::SymbolTable *scope) : scope(scope) {}
         void printTree();
-        VAR::Variant_t computeTree();
+        VAR::Variant_t computeTree(ST::SymbolTable *scope);
 };
 
 class Variable : public Node {
      public:
          std::string id;
          Node *next;
-         ST::SymbolTable *scope;//variavel guarda em qual escopo ela foi criada/chamada
-
-         Variable(std::string id, Node *next, ST::SymbolTable *scope) :
-              id(id), next(next), scope(scope) { }
+         
+         Variable(std::string id, Node *next) :
+              id(id), next(next) { }
          void printTree();
-         VAR::Variant_t computeTree();
+         VAR::Variant_t computeTree(ST::SymbolTable *scope);
 };
 
 }

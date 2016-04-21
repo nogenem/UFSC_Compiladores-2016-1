@@ -42,34 +42,34 @@ void Variable::printTree(){
 }
 
 /* Compute methods */
-VAR::Variant_t Integer::computeTree(){
+VAR::Variant_t Integer::computeTree(ST::SymbolTable *scope){
     return value;
 }
 
-VAR::Variant_t Double::computeTree(){
+VAR::Variant_t Double::computeTree(ST::SymbolTable *scope){
     return value;
 }
 
-VAR::Variant_t BinOp::computeTree(){
+VAR::Variant_t BinOp::computeTree(ST::SymbolTable *scope){
     VAR::Variant_t value, lvalue, rvalue;
-    lvalue = left->computeTree();
-    rvalue = right->computeTree();
+    lvalue = left->computeTree(scope);
+    rvalue = right->computeTree(scope);
     switch(op){
         case plus: value = lvalue + rvalue; break;
         case times: value = lvalue * rvalue; break;
         case assign:
             Variable* leftvar = dynamic_cast<Variable*>(left);
-            leftvar->scope->getSymbol(leftvar->id).setValue(rvalue);
-            value = leftvar->scope->getSymbol(leftvar->id).getValue();
+            scope->getSymbol(leftvar->id).setValue(rvalue);
+            value = scope->getSymbol(leftvar->id).getValue();
             break;
     }
     return value;
 }
 
-VAR::Variant_t Block::computeTree(){
+VAR::Variant_t Block::computeTree(ST::SymbolTable *scope){
     VAR::Variant_t value;
     for (Node* line: lines) {
-        value = line->computeTree();
+        value = line->computeTree(this->scope);
         switch (value.getType()) {
           case VAR::integer_t: std::cout << "Computed " << value.getIntValue() << std::endl; break;
           case VAR::double_t: std::cout << "Computed " << value.getDoubleValue() << std::endl; break;
@@ -78,6 +78,6 @@ VAR::Variant_t Block::computeTree(){
     return VAR::Variant_t();
 }
 
-VAR::Variant_t Variable::computeTree(){
+VAR::Variant_t Variable::computeTree(ST::SymbolTable *scope){
     return scope->getSymbol(id).getValue();
 }
