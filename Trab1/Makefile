@@ -11,7 +11,7 @@ OUTPUT=myparse
 
 all: flex yacc clang
 
-clang: src/*.cpp include/*.h
+clang: src/*.cpp include/*.h include/*.hpp
 	${CC} -o ${OUTPUT} ${PARAM} src/*.cpp *.cpp ${LLVMPARAM}
 
 yacc: ${BISONFILE}
