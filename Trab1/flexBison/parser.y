@@ -26,7 +26,7 @@ extern void yyerror(const char* s, ...);
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %token AND_OPT OR_OPT NOT_OPT
 
-%type <node> line varlist
+%type <node> line varlist expr
 %type <block> program lines
 
 %right ASSIGN_OPT
@@ -50,15 +50,27 @@ program : lines { programRoot = $1; }
 lines   : line ';' { $$ = new AST::Block();
                      if($1 != NULL) $$->lines.push_back($1); }
         | lines line ';' { if($2 != NULL) $1->lines.push_back($2); }
-        | lines error { yyerrok; }
+        | lines error ';' { yyerrok; std::cout << "\n"; }
         ;
 
 line    : INT_T ':' varlist { $$ = $3; }
         | REAL_T ':' varlist { $$ = $3; }
         | BOOL_T ':' varlist { $$ = $3; }
+        | ID_V ASSIGN_OPT expr { AST::Node *var = new AST::Variable($1, NULL);
+                                 $$ = new AST::BinOp(var, AST::assign, $3); }
         ;
 
-varlist : ID_V { $$ = new AST::Variable($1, NULL); }
+varlist : ID_V { $$ = new AST::Variable($1, NULL, true); }
         | varlist ',' ID_V { $$ = new AST::Variable($3, $1); }
+        ;
+
+expr    : BOOL_V { $$ = new AST::Bool($1); }
+        | INT_V { $$ = new AST::Integer($1); }
+        | REAL_V { $$ = new AST::Real($1); }
+        | ID_V { $$ = new AST::Variable($1, NULL); }
+        | expr '+' expr { $$ = new AST::BinOp($1, AST::plus, $3); }
+        | expr '-' expr { $$ = new AST::BinOp($1, AST::b_minus, $3); }
+        | expr '*' expr { $$ = new AST::BinOp($1, AST::times, $3); }
+        | expr '/' expr { $$ = new AST::BinOp($1, AST::division, $3); }
         ;
 %%
