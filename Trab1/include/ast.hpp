@@ -46,6 +46,14 @@ class Integer : public Node {
     int n;
 };
 
+class Parentheses : public Node {
+  public:
+    Parentheses(Node* expr) : expr(expr) {}
+    void printTree();
+
+    Node* expr;
+};
+
 class Variable : public Node {
   public:
     Variable(std::string id, Node *next, bool declaration=false):
@@ -67,6 +75,16 @@ class BinOp : public Node {
     Node *left;
     BinOperation op;
     Node *right;
+};
+
+class UniOp : public Node {
+  public:
+    UniOp(Node *expr, UniOperation op)
+      : expr(expr), op(op) {}
+    void printTree();
+
+    Node *expr;
+    UniOperation op;
 };
 
 class Block : public Node{

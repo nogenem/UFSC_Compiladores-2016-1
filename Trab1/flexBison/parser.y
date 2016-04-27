@@ -38,10 +38,10 @@ extern void yyerror(const char* s, ...);
 %right ASSIGN_OPT
 %left '+' '-'
 %left '*' '/'
-%right U_MINUS
 %left AND_OPT OR_OPT
 %right NOT_OPT
 %left EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
+%right U_MINUS
 %nonassoc error
 
 /* Starting rule
@@ -74,9 +74,11 @@ expr    : BOOL_V { $$ = new AST::Bool($1); }
         | INT_V { $$ = new AST::Integer($1); }
         | REAL_V { $$ = new AST::Real($1); }
         | ID_V { $$ = symtab->useVariable($1); }
+        | '(' expr ')' { $$ = new AST::Parentheses($2); }
         | expr '+' expr { $$ = new AST::BinOp($1, AST::plus, $3); }
         | expr '-' expr { $$ = new AST::BinOp($1, AST::b_minus, $3); }
         | expr '*' expr { $$ = new AST::BinOp($1, AST::times, $3); }
         | expr '/' expr { $$ = new AST::BinOp($1, AST::division, $3); }
+        | '-' expr %prec U_MINUS { $$ = new AST::UniOp($2, AST::u_minus); }
         ;
 %%

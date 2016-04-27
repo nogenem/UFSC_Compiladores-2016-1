@@ -1,0 +1,7 @@
+int: i, j;
+real: a;
+bool: comp;
+a := 10.0 + .57 - 2.;
+i := -2;
+j := i * (3 / 5);
+comp := TRUE;

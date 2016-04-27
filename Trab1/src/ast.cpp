@@ -47,6 +47,21 @@ void Real::printTree(){
   std::cout << "valor real " << n;
 }
 
+void Parentheses::printTree(){
+  std::cout << "(abre parenteses) ";
+  expr->printTree();
+  std::cout << " (fecha parenteses)";
+}
+
+void UniOp::printTree(){
+  switch (op) {
+    case u_minus: std::cout << "(menos unario TYPE) "; break;
+    case u_not: std::cout << "(nao unario booleano) "; break;
+    default: break;
+  }
+  expr->printTree();
+}
+
 void BinOp::printTree(){
   if(op == assign){
     std::cout << "Atribuicao de valor para ";
@@ -60,7 +75,7 @@ void BinOp::printTree(){
   switch (op) {
     case plus: std::cout << " (soma TYPE) "; break;
     case b_minus: std::cout << " (subtracao TYPE) "; break;
-    case times: std::cout << " (multiplicacao TYPE) "; break;
+    case times: std::cout << " (vezes TYPE) "; break;
     case division: std::cout << " (divisao TYPE) "; break;
     default: break;
   }
