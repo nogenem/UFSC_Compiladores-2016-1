@@ -1,11 +1,24 @@
 #include "ast.hpp"
 
 using namespace AST;
+extern ST::SymbolTable *symtab;
 
 void Block::printTree(){
   for (Node* line: lines) {
       line->printTree();
       std::cout << std::endl;
+  }
+}
+
+const char* Variable::getType(){
+  auto symbol = symtab->getSymbol(id);
+  if(symbol == nullptr)
+    return "indefinida";
+
+  switch (symbol->type) {
+    case ST::integer_t: return "inteira";
+    case ST::real_t: return "real";
+    case ST::bool_t: return "booleana";
   }
 }
 
@@ -15,9 +28,9 @@ void Variable::printTree(){
       std::cout << ", ";
   }else{
     if(declaration)
-      std::cout << "Declaracao de variavel TYPE: ";
+      std::cout << "Declaracao de variavel " << getType() << ": ";
     else
-      std::cout << "variavel TYPE ";
+      std::cout << "variavel " << getType() << " ";
   }
   std::cout << id;
 }

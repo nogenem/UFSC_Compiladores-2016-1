@@ -1,10 +1,16 @@
 %{
 #include "ast.hpp"
+#include "st.hpp"
 
 AST::Block *programRoot; /* the root node of our program AST:: */
+ST::SymbolTable *symtab = new ST::SymbolTable(NULL);  /* main symbol table */
 
 extern int yylex();
 extern void yyerror(const char* s, ...);
+
+/*
+  Perguntar ao professor sobre erros
+*/
 %}
 
 %define parse.trace
@@ -53,21 +59,21 @@ lines   : line ';' { $$ = new AST::Block();
         | lines error ';' { yyerrok; std::cout << "\n"; }
         ;
 
-line    : INT_T ':' varlist { $$ = $3; }
-        | REAL_T ':' varlist { $$ = $3; }
-        | BOOL_T ':' varlist { $$ = $3; }
-        | ID_V ASSIGN_OPT expr { AST::Node *var = new AST::Variable($1, NULL);
+line    : INT_T ':' varlist { $$ = $3; symtab->setType($$, ST::integer_t); }
+        | REAL_T ':' varlist { $$ = $3; symtab->setType($$, ST::real_t); }
+        | BOOL_T ':' varlist { $$ = $3; symtab->setType($$, ST::bool_t); }
+        | ID_V ASSIGN_OPT expr { AST::Node *var = symtab->assignVariable($1);
                                  $$ = new AST::BinOp(var, AST::assign, $3); }
         ;
 
-varlist : ID_V { $$ = new AST::Variable($1, NULL, true); }
-        | varlist ',' ID_V { $$ = new AST::Variable($3, $1); }
+varlist : ID_V { $$ = symtab->newVariable($1, NULL, true); }
+        | varlist ',' ID_V { $$ = symtab->newVariable($3, $1); }
         ;
 
 expr    : BOOL_V { $$ = new AST::Bool($1); }
         | INT_V { $$ = new AST::Integer($1); }
         | REAL_V { $$ = new AST::Real($1); }
-        | ID_V { $$ = new AST::Variable($1, NULL); }
+        | ID_V { $$ = symtab->useVariable($1); }
         | expr '+' expr { $$ = new AST::BinOp($1, AST::plus, $3); }
         | expr '-' expr { $$ = new AST::BinOp($1, AST::b_minus, $3); }
         | expr '*' expr { $$ = new AST::BinOp($1, AST::times, $3); }

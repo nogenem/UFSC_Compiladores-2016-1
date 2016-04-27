@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <iostream>
+#include "st.hpp"
 
 extern void yyerror(const char* s, ...);
 
@@ -50,6 +51,7 @@ class Variable : public Node {
     Variable(std::string id, Node *next, bool declaration=false):
             id(id), next(next), declaration(declaration) {}
     void printTree();
+    const char* getType();
 
     std::string id;
     Node *next;
