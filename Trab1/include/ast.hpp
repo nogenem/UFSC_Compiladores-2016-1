@@ -20,12 +20,16 @@ class Node {
   public:
     virtual ~Node(){}
     virtual void printTree(){}
+    virtual ST::Type getType(){return ST::notype_t;}
+    virtual const char* getTypeTxt(){return "indefinido";}
 };
 
 class Bool : public Node {
   public:
     Bool(bool n) : n(n) {}
     void printTree();
+    ST::Type getType(){return ST::bool_t;}
+    const char* getTypeTxt(){return "booleano";}
 
     bool n;
 };
@@ -34,6 +38,8 @@ class Real : public Node {
   public:
     Real(double n) : n(n) {}
     void printTree();
+    ST::Type getType(){return ST::real_t;}
+    const char* getTypeTxt(){return "real";}
 
     double n;
 };
@@ -42,6 +48,8 @@ class Integer : public Node {
   public:
     Integer(int n) : n(n) {}
     void printTree();
+    ST::Type getType(){return ST::integer_t;}
+    const char* getTypeTxt(){return "inteiro";}
 
     int n;
 };
@@ -50,6 +58,7 @@ class Parentheses : public Node {
   public:
     Parentheses(Node* expr) : expr(expr) {}
     void printTree();
+    ST::Type getType();
 
     Node* expr;
 };
@@ -59,7 +68,8 @@ class Variable : public Node {
     Variable(std::string id, Node *next, bool declaration=false):
             id(id), next(next), declaration(declaration) {}
     void printTree();
-    const char* getType();
+    ST::Type getType();
+    const char* getTypeTxt();
 
     std::string id;
     Node *next;
@@ -68,9 +78,11 @@ class Variable : public Node {
 
 class BinOp : public Node {
   public:
-    BinOp(Node *left, BinOperation op, Node *right) :
-        left(left), op(op), right(right) {}
+    BinOp(Node *left, BinOperation op, Node *right);
     void printTree();
+    ST::Type getType();
+    const char* getTypeTxt();
+    const char* getOpTxt();
 
     Node *left;
     BinOperation op;
@@ -79,9 +91,10 @@ class BinOp : public Node {
 
 class UniOp : public Node {
   public:
-    UniOp(Node *expr, UniOperation op)
-      : expr(expr), op(op) {}
+    UniOp(Node *expr, UniOperation op);
     void printTree();
+    ST::Type getType();
+    const char* getTypeTxt();
 
     Node *expr;
     UniOperation op;

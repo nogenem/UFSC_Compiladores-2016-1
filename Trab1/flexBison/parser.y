@@ -9,7 +9,7 @@ extern int yylex();
 extern void yyerror(const char* s, ...);
 
 /*
-  Perguntar ao professor sobre erros
+  TODO:
 */
 %}
 
@@ -35,13 +35,11 @@ extern void yyerror(const char* s, ...);
 %type <node> line varlist expr
 %type <block> program lines
 
+%nonassoc EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %right ASSIGN_OPT
-%left '+' '-'
+%left '+' '-' AND_OPT OR_OPT
 %left '*' '/'
-%left AND_OPT OR_OPT
-%right NOT_OPT
-%left EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
-%right U_MINUS
+%right NOT_OPT U_MINUS
 %nonassoc error
 
 /* Starting rule
@@ -79,6 +77,15 @@ expr    : BOOL_V { $$ = new AST::Bool($1); }
         | expr '-' expr { $$ = new AST::BinOp($1, AST::b_minus, $3); }
         | expr '*' expr { $$ = new AST::BinOp($1, AST::times, $3); }
         | expr '/' expr { $$ = new AST::BinOp($1, AST::division, $3); }
+        | expr AND_OPT expr { $$ = new AST::BinOp($1, AST::b_and, $3); }
+        | expr OR_OPT expr { $$ = new AST::BinOp($1, AST::b_or, $3); }
+        | expr EQ_OPT expr { $$ = new AST::BinOp($1, AST::eq, $3); }
+        | expr NEQ_OPT expr { $$ = new AST::BinOp($1, AST::neq, $3); }
+        | expr GRT_OPT expr { $$ = new AST::BinOp($1, AST::grt, $3); }
+        | expr LST_OPT expr { $$ = new AST::BinOp($1, AST::lst, $3); }
+        | expr GRTEQ_OPT expr { $$ = new AST::BinOp($1, AST::grteq, $3); }
+        | expr LSTEQ_OPT expr { $$ = new AST::BinOp($1, AST::lsteq, $3); }
         | '-' expr %prec U_MINUS { $$ = new AST::UniOp($2, AST::u_minus); }
+        | NOT_OPT expr { $$ = new AST::UniOp($2, AST::u_not); }
         ;
 %%

@@ -11,7 +11,7 @@ namespace ST {
 class Symbol;
 
 enum Kind { variable_t };
-enum Type { integer_t, real_t, bool_t };
+enum Type { notype_t, integer_t, real_t, bool_t };
 typedef std::map<std::string, Symbol*> SymbolList; //Set of Symbols
 
 class Symbol {
