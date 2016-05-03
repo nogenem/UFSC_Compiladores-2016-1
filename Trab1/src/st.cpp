@@ -25,13 +25,18 @@ Symbol* SymbolTable::getSymbol(std::string id){
     return nullptr;
 }
 
-AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next, bool declaration/*= false*/){
+AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next,
+      bool isArray, bool declaration/*= false*/){
   if ( checkId(id, true) ) yyerror("Variable redefinition! %s\n", id.c_str());
   else {
-     Symbol *entry = new Symbol(variable_t);
+     Symbol *entry = new Symbol(isArray ? array_t : variable_t);
      addSymbol(id,entry); //Adds variable to symbol table
   }
-  return new AST::Variable(id, next, declaration); //Creates variable node anyway
+  if(isArray)
+    return new AST::Array(id, next, declaration);
+  else
+    return new AST::Variable(id, next, declaration);
+  //return (isArray ? new AST::Array(id, next, declaration) : new AST::Variable(id, next, declaration));
 }
 
 AST::Node* SymbolTable::assignVariable(std::string id){
@@ -49,11 +54,18 @@ AST::Node* SymbolTable::useVariable(std::string id){
   return new AST::Variable(id, NULL); //Creates variable node anyway
 }
 
-AST::Node* SymbolTable::setType(AST::Node *node, Type type){
+void SymbolTable::setType(AST::Node *node, Type type){
   AST::Variable *tmp = (AST::Variable*) node;
   while(tmp != nullptr){
     getSymbol(tmp->id)->type = type;
     tmp = (AST::Variable*) tmp->next;
   }
-  return node;
+}
+
+void SymbolTable::setArraySize(AST::Node *node, int aSize){
+  AST::Array *tmp = (AST::Array*) node;
+  while(tmp != nullptr){
+    getSymbol(tmp->id)->aSize = aSize;
+    tmp = (AST::Array*) tmp->next;
+  }
 }

@@ -10,6 +10,8 @@ extern void yyerror(const char* s, ...);
 
 /*
   TODO:
+	Tamanho de um arranjo é soh um inteiro simples
+	Fazer uma classe diferente para Array
 */
 %}
 
@@ -22,18 +24,21 @@ extern void yyerror(const char* s, ...);
   const char *name;
   AST::Node *node;
   AST::Block *block;
+  ST::Type type;
 }
 
 %token<int_v> INT_V
 %token<real_v> REAL_V
 %token<bool_v> BOOL_V
 %token<name> ID_V
-%token INT_T REAL_T BOOL_T RETURN_T
+%token<type> INT_T REAL_T BOOL_T
+%token RETURN_T
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %token AND_OPT OR_OPT NOT_OPT
 
-%type <node> line varlist expr
+%type <node> line varlist expr arraylist
 %type <block> program lines
+%type <type> vartype
 
 %nonassoc EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %right ASSIGN_OPT
@@ -57,16 +62,25 @@ lines   : line ';' { $$ = new AST::Block();
         | lines error ';' { yyerrok; std::cout << "\n"; }
         ;
 
-line    : INT_T ':' varlist { $$ = $3; symtab->setType($$, ST::integer_t); }
-        | REAL_T ':' varlist { $$ = $3; symtab->setType($$, ST::real_t); }
-        | BOOL_T ':' varlist { $$ = $3; symtab->setType($$, ST::bool_t); }
+line    : vartype ':' varlist { $$ = $3; symtab->setType($$, $1); }
+        | vartype '[' INT_V ']' ':' arraylist { $$ = $6; symtab->setType($$, $1);
+                                            symtab->setArraySize($$, $3); }
         | ID_V ASSIGN_OPT expr { AST::Node *var = symtab->assignVariable($1);
                                  $$ = new AST::BinOp(var, AST::assign, $3); }
         ;
 
-varlist : ID_V { $$ = symtab->newVariable($1, NULL, true); }
-        | varlist ',' ID_V { $$ = symtab->newVariable($3, $1); }
+vartype : INT_T  { $$ = $1; }
+        | REAL_T { $$ = $1; }
+        | BOOL_T { $$ = $1; }
         ;
+
+varlist : ID_V { $$ = symtab->newVariable($1, NULL, false, true); }
+        | varlist ',' ID_V { $$ = symtab->newVariable($3, $1, false, false); }
+        ;
+
+arraylist : ID_V { $$ = symtab->newVariable($1, NULL, true, true); }
+          | arraylist ',' ID_V { $$ = symtab->newVariable($3, $1, true, false); }
+          ;
 
 expr    : BOOL_V { $$ = new AST::Bool($1); }
         | INT_V { $$ = new AST::Integer($1); }

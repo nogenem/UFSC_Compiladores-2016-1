@@ -10,30 +10,33 @@ namespace ST {
 
 class Symbol;
 
-enum Kind { variable_t };
+enum Kind { variable_t, array_t };
 enum Type { notype_t, integer_t, real_t, bool_t };
 typedef std::map<std::string, Symbol*> SymbolList; //Set of Symbols
 
 class Symbol {
   public:
-    Symbol(Kind k): kind(k), type(integer_t), initialized(false) {}
+    Symbol(Kind k): kind(k), type(integer_t),
+      initialized(false), aSize(0) {}
 
     Kind kind;
     Type type;
+    int aSize;//size of array
     bool initialized;//initialized/defined?
 };
 
-class SymbolTable{
+class SymbolTable {
   public:
     SymbolTable(SymbolTable *prev) : _previous(prev) {}
     ~SymbolTable() {}
 
     bool checkId(std::string id, bool creation=false);
     void addSymbol(std::string id, Symbol *newsymbol);
-    AST::Node* newVariable(std::string id, AST::Node* next, bool declaration=false);
+    AST::Node* newVariable(std::string id, AST::Node* next, bool isArray, bool declaration=false);
     AST::Node* assignVariable(std::string id);
     AST::Node* useVariable(std::string id);
-    AST::Node* setType(AST::Node *node, Type type);
+    void setType(AST::Node *node, Type type);
+    void setArraySize(AST::Node *node, int aSize);
 
     SymbolList& getEntryList(){return _entryList;}
     SymbolTable* getPrevious(){return _previous;}

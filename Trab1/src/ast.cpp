@@ -87,6 +87,15 @@ const char* Variable::getTypeTxt(){
   }
 }
 
+const char* Array::getTypeTxt(){
+  switch(getType()){
+    case ST::integer_t: return "inteiro";
+    case ST::real_t: return "real";
+    case ST::bool_t: return "booleano";
+    case ST::notype_t: return "indefinido";
+  }
+}
+
 ST::Type BinOp::getType(){
   if(op == assign)
     return ST::notype_t;
@@ -186,6 +195,28 @@ void Variable::printTree(){
   std::cout << id;
 }
 
+int Array::getSize(){
+  auto symbol = symtab->getSymbol(id);
+  if (symbol != nullptr)
+    return symbol->aSize;
+  else
+    return 0;
+}
+
+void Array::printTree(){
+  if (next != NULL){
+      next->printTree();
+      std::cout << ", ";
+  }else{
+    if(declaration){
+      std::cout << "Declaracao de arranjo " << getTypeTxt()
+        << " de tamanho " << getSize() << ": ";
+    }else
+      std::cout << "arranjo " << getTypeTxt() << " ";
+  }
+  std::cout << id;
+}
+
 void Bool::printTree(){
   std::cout << "valor booleano " << (n?"TRUE":"FALSE");
 }
@@ -225,6 +256,7 @@ void BinOp::printTree(){
   auto l = left->getType();
   auto r = right->getType();
 
+  std::cout << "(";
   left->printTree();
   if(r==ST::real_t && l==ST::integer_t)
     std::cout << " para real";
@@ -248,4 +280,5 @@ void BinOp::printTree(){
   right->printTree();
   if(l==ST::real_t && r==ST::integer_t)
     std::cout << " para real";
+  std::cout << ")";
 }

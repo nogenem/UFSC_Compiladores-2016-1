@@ -67,13 +67,24 @@ class Variable : public Node {
   public:
     Variable(std::string id, Node *next, bool declaration=false):
             id(id), next(next), declaration(declaration) {}
-    void printTree();
-    ST::Type getType();
-    const char* getTypeTxt();
+    virtual void printTree();
+    virtual ST::Type getType();
+    virtual const char* getTypeTxt();
 
     std::string id;
     Node *next;
     bool declaration;//É a declaração da variavel?
+};
+
+class Array : public Variable {
+  public:
+    Array(std::string id, Node *next, bool declaration=false) :
+        Variable(id, next, declaration){}
+
+    void printTree();
+    const char* getTypeTxt();
+
+    int getSize();
 };
 
 class BinOp : public Node {
