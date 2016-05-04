@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include <string>
 
 using namespace AST;
 extern ST::SymbolTable *symtab;
@@ -9,6 +10,15 @@ BinOp::BinOp(Node *left, BinOperation op, Node *right) :
     auto l = left->getType();
     auto r = right->getType();
 
+    auto txt1 = std::string(left->getTypeTxt());
+    auto txt2 = std::string(right->getTypeTxt());
+
+    // gambiarra pra deixar tudo masculino!!!!
+    if(txt1 != std::string("real"))
+      txt1 = txt1.substr(0, txt1.size()-1) + "o";
+    if(txt2 != std::string("real"))
+      txt2 = txt2.substr(0, txt2.size()-1) + "o";
+
     switch (op) {
       case plus:
       case b_minus:
@@ -18,28 +28,44 @@ BinOp::BinOp(Node *left, BinOperation op, Node *right) :
       case lst:
       case grteq:
       case lsteq:{
-        if(l==ST::bool_t || l==ST::notype_t || r==ST::bool_t || r==ST::notype_t){
-          yyerror("Operacao binaria '%s' requer dois valores numericos!\n", getOpTxt());
+        if(l==ST::bool_t || l==ST::notype_t){
+          yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.\n",
+            getOpTxt(), txt1.c_str());
+        }
+        if(r==ST::bool_t || r==ST::notype_t){
+          yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.\n",
+            getOpTxt(), txt2.c_str());
         }
         break;
       }
       case b_and:
       case b_or:{
-        if(l!=ST::bool_t || r!=ST::bool_t){
-          yyerror("Operacao binaria '%s' requer dois valores booleanos!\n", getOpTxt());
+        if(l!=ST::bool_t){
+          yyerror("semantico: operacao %s espera booleano mas recebeu %s.\n",
+            getOpTxt(), txt1.c_str());
+        }
+        if(r!=ST::bool_t){
+          yyerror("semantico: operacao %s espera booleano mas recebeu %s.\n",
+            getOpTxt(), txt2.c_str());
         }
         break;
       }
       case eq:
       case neq:{
-        if( (l==ST::bool_t && r!=ST::bool_t) || (r==ST::bool_t && l!=ST::bool_t) ){
-          yyerror("Operacao binaria '%s' usando tipos diferentes!\n", getOpTxt());
+        if( l==ST::bool_t || l==ST::notype_t ){
+          yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.\n",
+            getOpTxt(), txt1.c_str());
+        }
+        if( r==ST::bool_t || r==ST::notype_t ){
+          yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.\n",
+            getOpTxt(), txt2.c_str());
         }
         break;
       }
       case assign:{
         if(l != r && !(l==ST::real_t && r==ST::integer_t)){
-          yyerror("Operacao binaria '%s' usando tipos diferentes!\n", getOpTxt());
+          yyerror("semantico: operacao %s espera %s mas recebeu %s.\n",
+            getOpTxt(), txt1.c_str(), txt2.c_str());
         }
         break;
       }
@@ -51,15 +77,24 @@ UniOp::UniOp(Node *expr, UniOperation op)
   : expr(expr), op(op) {
 
     auto type = expr->getType();
+    auto txt = std::string(expr->getTypeTxt());
+    // gambiarra pra deixar tudo masculino!!!!
+    if(txt != std::string("real"))
+      txt = txt.substr(0, txt.size()-1) + "o";
+
     switch (op) {
       case u_not:{
-        if(type!=ST::bool_t)
-          yyerror("Operacao unaria nao requer um valor booleano!\n");
+        if(type!=ST::bool_t){
+          yyerror("semantico: operacao %s espera booleano mas recebeu %s.\n",
+            getOpTxt(), txt.c_str());
+        }
         break;
       }
       case u_minus:{
-        if(type==ST::bool_t || type==ST::notype_t)
-          yyerror("Operacao unaria menos requer um valor numerico!\n");
+        if(type==ST::bool_t || type==ST::notype_t){
+          yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.\n",
+              getOpTxt(), txt.c_str());
+        }
         break;
       }
       default: break;
@@ -83,7 +118,7 @@ const char* Variable::getTypeTxt(){
     case ST::integer_t: return "inteira";
     case ST::real_t: return "real";
     case ST::bool_t: return "booleana";
-    case ST::notype_t: return "indefinida";
+    case ST::notype_t: return "desconhecida";
   }
 }
 
@@ -92,7 +127,7 @@ const char* Array::getTypeTxt(){
     case ST::integer_t: return "inteiro";
     case ST::real_t: return "real";
     case ST::bool_t: return "booleano";
-    case ST::notype_t: return "indefinido";
+    case ST::notype_t: return "desconhecido";
   }
 }
 
@@ -107,7 +142,8 @@ ST::Type BinOp::getType(){
   auto r = right->getType();
 
   ST::Type t = ST::integer_t;
-  if(l==ST::real_t || r==ST::real_t){
+  if( (l!=ST::notype_t && r!=ST::notype_t) &&
+    (l==ST::real_t || r==ST::real_t) ){
     t = ST::real_t;
   }
   return t;
@@ -121,10 +157,8 @@ const char* BinOp::getTypeTxt(){
 
     if(l==ST::real_t || r==ST::real_t)
       return "real";
-    else if(l==ST::bool_t && r==ST::bool_t)
-      return "booleano";
     else
-      return "inteiro";
+      return (op==eq || op==neq) ? "booleano" : "inteiro";
   }
   switch(getType()){
     case ST::real_t: return "real";
@@ -133,11 +167,12 @@ const char* BinOp::getTypeTxt(){
       switch(op){
         case plus:
         case division:
+        case times:
           return "inteira";
         default: return "inteiro";
       }
     }
-    case ST::notype_t: return "indefinida";
+    case ST::notype_t: return "desconhecida";
   }
 }
 
@@ -145,7 +180,7 @@ const char* BinOp::getOpTxt(){
   switch (op) {
     case plus: return "soma";
     case b_minus: return "subtracao";
-    case times: return "vezes";
+    case times: return "multiplicao";
     case division: return "divisao";
     case assign: return "atribuicao";
     case eq: return "igual";
@@ -156,6 +191,13 @@ const char* BinOp::getOpTxt(){
     case lsteq: return "menor ou igual";
     case b_and: return "e";
     case b_or: return "ou";
+  }
+}
+
+const char* UniOp::getOpTxt(){
+  switch (op) {
+    case u_not: return "nao";
+    case u_minus: return "menos";
   }
 }
 
@@ -170,8 +212,9 @@ const char* UniOp::getTypeTxt(){
   switch (getType()) {
     case ST::integer_t: return "inteiro";
     case ST::real_t: return "real";
-    case ST::notype_t: return "indefinido";
-    default: return "indefinido";
+    case ST::bool_t: return "booleano";
+    case ST::notype_t: return "desconhecido";
+    default: return "desconhecido";
   }
 }
 
@@ -264,7 +307,7 @@ void BinOp::printTree(){
   switch (op) {
     case plus: std::cout << " (soma "; break;
     case b_minus: std::cout << " (subtracao "; break;
-    case times: std::cout << " (vezes "; break;
+    case times: std::cout << " (multiplicacao "; break;
     case division: std::cout << " (divisao "; break;
     case eq: std::cout << " (igual "; break;
     case neq: std::cout << " (diferente "; break;

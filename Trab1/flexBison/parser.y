@@ -9,9 +9,10 @@ extern int yylex();
 extern void yyerror(const char* s, ...);
 
 /*
+  ASK:
+    var := 1.0 * var;
+
   TODO:
-	Tamanho de um arranjo é soh um inteiro simples
-	Fazer uma classe diferente para Array
 */
 %}
 

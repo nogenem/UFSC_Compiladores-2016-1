@@ -21,7 +21,7 @@ class Node {
     virtual ~Node(){}
     virtual void printTree(){}
     virtual ST::Type getType(){return ST::notype_t;}
-    virtual const char* getTypeTxt(){return "indefinido";}
+    virtual const char* getTypeTxt(){return "desconhecido";}
 };
 
 class Bool : public Node {
@@ -106,6 +106,7 @@ class UniOp : public Node {
     void printTree();
     ST::Type getType();
     const char* getTypeTxt();
+    const char* getOpTxt();
 
     Node *expr;
     UniOperation op;

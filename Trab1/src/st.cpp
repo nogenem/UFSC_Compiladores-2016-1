@@ -27,7 +27,7 @@ Symbol* SymbolTable::getSymbol(std::string id){
 
 AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next,
       bool isArray, bool declaration/*= false*/){
-  if ( checkId(id, true) ) yyerror("Variable redefinition! %s\n", id.c_str());
+  if ( checkId(id, true) ) yyerror("semantico: redefinicao da variavel %s.\n", id.c_str());
   else {
      Symbol *entry = new Symbol(isArray ? array_t : variable_t);
      addSymbol(id,entry); //Adds variable to symbol table
@@ -36,11 +36,10 @@ AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next,
     return new AST::Array(id, next, declaration);
   else
     return new AST::Variable(id, next, declaration);
-  //return (isArray ? new AST::Array(id, next, declaration) : new AST::Variable(id, next, declaration));
 }
 
 AST::Node* SymbolTable::assignVariable(std::string id){
-  if ( ! checkId(id) ) yyerror("Variable not defined yet! %s\n", id.c_str());
+  if ( ! checkId(id) ) yyerror("semantico: variavel %s nao declarada.\n", id.c_str());
   auto symbol = getSymbol(id);
   if(symbol != nullptr)
     symbol->initialized = true;
@@ -48,9 +47,9 @@ AST::Node* SymbolTable::assignVariable(std::string id){
 }
 
 AST::Node* SymbolTable::useVariable(std::string id){
-  if ( ! checkId(id) ) yyerror("Variable not defined yet! %s\n", id.c_str());
+  if ( ! checkId(id) ) yyerror("semantico: variavel %s nao declarada.\n", id.c_str());
   auto symbol = getSymbol(id);
-  if ( symbol != nullptr && !symbol->initialized ) yyerror("Variable not initialized yet! %s\n", id.c_str());
+  if ( symbol != nullptr && !symbol->initialized ) yyerror("semantico: variavel %s nao inicializada.\n", id.c_str());
   return new AST::Variable(id, NULL); //Creates variable node anyway
 }
 

@@ -55,13 +55,13 @@ void yyerror(const char* s, ...);
  /* ids */
 [a-z]+                          {yylval.name = strdup(yytext); return ID_V;}
  /* any other thing */
-.                               {yyerror("Unknown token! %c\n", *yytext);} /*complains about every unknown character*/
+.                               {yyerror("lexico: simbolo desconhecido: %c.\n", *yytext);} /*complains about every unknown character*/
 
 %%
 
 void yyerror(const char *s, ...){
     va_list ap;
     va_start(ap, s);
-    std::fprintf(stderr, "Line %d: error: ", yylineno);
+    std::fprintf(stderr, "[Linha %d] Erro ", yylineno);
     std::vfprintf(stderr, s, ap);
 }
