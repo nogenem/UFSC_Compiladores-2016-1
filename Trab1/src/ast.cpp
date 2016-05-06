@@ -1,5 +1,6 @@
 #include "ast.hpp"
 #include <string>
+#include <iomanip>
 
 using namespace AST;
 extern ST::SymbolTable *symtab;
@@ -166,6 +167,7 @@ const char* BinOp::getTypeTxt(){
     case ST::integer_t:{
       switch(op){
         case plus:
+        case b_minus:
         case division:
         case times:
           return "inteira";
@@ -230,10 +232,19 @@ void Variable::printTree(){
       next->printTree();
       std::cout << ", ";
   }else{
-    if(declaration)
-      std::cout << "Declaracao de variavel " << getTypeTxt() << ": ";
-    else
-      std::cout << "variavel " << getTypeTxt() << " ";
+    switch (use) {
+      case declr:{
+        std::cout << "Declaracao de variavel " << getTypeTxt() << ": ";
+        break;
+      }case attr:{
+        std::cout << "Atribuicao de valor para variavel " <<
+          getTypeTxt() << " ";
+        break;
+      }case read:{
+        std::cout << "variavel " << getTypeTxt() << " ";
+        break;
+      }
+    }
   }
   std::cout << id;
 }
@@ -251,13 +262,25 @@ void Array::printTree(){
       next->printTree();
       std::cout << ", ";
   }else{
-    if(declaration){
-      std::cout << "Declaracao de arranjo " << getTypeTxt()
-        << " de tamanho " << getSize() << ": ";
-    }else
-      std::cout << "arranjo " << getTypeTxt() << " ";
+    switch(use){
+      case declr:{
+        std::cout << "Declaracao de arranjo " << getTypeTxt()
+          << " de tamanho " << getSize() << ": ";
+        break;
+      }case attr:{
+        std::cout << "Atribuicao de valor para arranjo " <<
+            getTypeTxt() << " " << id << ":\n+indice: ";
+        index->printTree();
+        std::cout << "\n+valor";
+        break;
+      }case read:{
+        std::cout << "arranjo " << getTypeTxt() << " ";
+        break;
+      }
+    }
   }
-  std::cout << id;
+  if(use != attr)
+    std::cout << id;
 }
 
 void Bool::printTree(){
@@ -269,27 +292,29 @@ void Integer::printTree(){
 }
 
 void Real::printTree(){
-  std::cout << "valor real " << n;
+  std::cout << "valor real " <<
+    std::setiosflags(std::ios::fixed) << std::setprecision(2) << n;
 }
 
 void Parentheses::printTree(){
-  std::cout << "(abre parenteses) ";
+  std::cout << "((abre parenteses) ";
   expr->printTree();
-  std::cout << " (fecha parenteses)";
+  std::cout << " (fecha parenteses))";
 }
 
 void UniOp::printTree(){
+  std::cout << "(";
   switch (op) {
     case u_minus: std::cout << "(menos unario "<< getTypeTxt() <<") "; break;
     case u_not: std::cout << "(nao unario booleano) "; break;
     default: break;
   }
   expr->printTree();
+  std::cout << ")";
 }
 
 void BinOp::printTree(){
   if(op == assign){
-    std::cout << "Atribuicao de valor para ";
     left->printTree();
     std::cout << ": ";
     right->printTree();

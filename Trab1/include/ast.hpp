@@ -12,6 +12,9 @@ namespace AST {
 enum BinOperation { plus, b_minus, times, division, assign, eq, neq, grt, grteq, lst, lsteq, b_and, b_or };
 enum UniOperation { u_not, u_minus };
 
+//Usos de uma variavel/array
+enum Use { attr, declr, read };
+
 class Node;
 
 typedef std::vector<Node*> NodeList; //List of ASTs
@@ -65,26 +68,31 @@ class Parentheses : public Node {
 
 class Variable : public Node {
   public:
-    Variable(std::string id, Node *next, bool declaration=false):
-            id(id), next(next), declaration(declaration) {}
+    Variable(std::string id, Node *next, Use u):
+            id(id), next(next), use(u) {}
     virtual void printTree();
     virtual ST::Type getType();
     virtual const char* getTypeTxt();
 
     std::string id;
     Node *next;
-    bool declaration;//É a declaração da variavel?
+    Use use;//pra que que a variavel sera usada?
 };
 
 class Array : public Variable {
   public:
-    Array(std::string id, Node *next, bool declaration=false) :
-        Variable(id, next, declaration){}
+    Array(std::string id, Node *next, Use u) :
+        Variable(id, next, u){}
+
+    Array(std::string id, Node *next, Node *i, Use u) :
+        Variable(id, next, u){ index = i; }
 
     void printTree();
     const char* getTypeTxt();
 
     int getSize();
+
+    Node *index;
 };
 
 class BinOp : public Node {

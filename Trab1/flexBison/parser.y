@@ -10,9 +10,9 @@ extern void yyerror(const char* s, ...);
 
 /*
   ASK:
-    var := 1.0 * var;
 
   TODO:
+    Repensar em como fazer as mensagens de erro...
 */
 %}
 
@@ -68,6 +68,8 @@ line    : vartype ':' varlist { $$ = $3; symtab->setType($$, $1); }
                                             symtab->setArraySize($$, $3); }
         | ID_V ASSIGN_OPT expr { AST::Node *var = symtab->assignVariable($1);
                                  $$ = new AST::BinOp(var, AST::assign, $3); }
+        | ID_V '[' expr ']' ASSIGN_OPT expr { AST::Node *var = symtab->assignArray($1, $3);
+                                              $$ = new AST::BinOp(var, AST::assign, $6); }
         ;
 
 vartype : INT_T  { $$ = $1; }
@@ -75,18 +77,19 @@ vartype : INT_T  { $$ = $1; }
         | BOOL_T { $$ = $1; }
         ;
 
-varlist : ID_V { $$ = symtab->newVariable($1, NULL, false, true); }
-        | varlist ',' ID_V { $$ = symtab->newVariable($3, $1, false, false); }
+varlist : ID_V { $$ = symtab->newVariable($1, NULL, false); }
+        | varlist ',' ID_V { $$ = symtab->newVariable($3, $1, false); }
         ;
 
-arraylist : ID_V { $$ = symtab->newVariable($1, NULL, true, true); }
-          | arraylist ',' ID_V { $$ = symtab->newVariable($3, $1, true, false); }
+arraylist : ID_V { $$ = symtab->newVariable($1, NULL, true); }
+          | arraylist ',' ID_V { $$ = symtab->newVariable($3, $1, true); }
           ;
 
 expr    : BOOL_V { $$ = new AST::Bool($1); }
         | INT_V { $$ = new AST::Integer($1); }
         | REAL_V { $$ = new AST::Real($1); }
         | ID_V { $$ = symtab->useVariable($1); }
+        | ID_V '[' expr ']' { $$ = symtab->useArray($1, $3); }
         | '(' expr ')' { $$ = new AST::Parentheses($2); }
         | expr '+' expr { $$ = new AST::BinOp($1, AST::plus, $3); }
         | expr '-' expr { $$ = new AST::BinOp($1, AST::b_minus, $3); }

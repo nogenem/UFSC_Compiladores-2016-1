@@ -32,9 +32,11 @@ class SymbolTable {
 
     bool checkId(std::string id, bool creation=false);
     void addSymbol(std::string id, Symbol *newsymbol);
-    AST::Node* newVariable(std::string id, AST::Node* next, bool isArray, bool declaration=false);
+    AST::Node* newVariable(std::string id, AST::Node* next, bool isArray);
     AST::Node* assignVariable(std::string id);
+    AST::Node* assignArray(std::string id, AST::Node *index);
     AST::Node* useVariable(std::string id);
+    AST::Node* useArray(std::string id, AST::Node *index);
     void setType(AST::Node *node, Type type);
     void setArraySize(AST::Node *node, int aSize);
 
