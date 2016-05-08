@@ -2,17 +2,14 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
 #include "st.hpp"
+#include "util.hpp"
 
 extern void yyerror(const char* s, ...);
 
 namespace AST {
 
-//Binary operations
-enum BinOperation { plus, b_minus, times, division, assign, eq, neq, grt, grteq, lst, lsteq, b_and, b_or };
-enum UniOperation { u_not, u_minus };
-
-//Usos de uma variavel/array
 enum Use { attr, declr, read };
 
 class Node;
@@ -21,103 +18,12 @@ typedef std::vector<Node*> NodeList; //List of ASTs
 
 class Node {
   public:
-    virtual ~Node(){}
+    Node(){}
+    Node(Types::Type type): type(type){}
+    virtual ~Node() {}
     virtual void printTree(){}
-    virtual ST::Type getType(){return ST::notype_t;}
-    virtual const char* getTypeTxt(){return "desconhecido";}
-};
 
-class Bool : public Node {
-  public:
-    Bool(bool n) : n(n) {}
-    void printTree();
-    ST::Type getType(){return ST::bool_t;}
-    const char* getTypeTxt(){return "booleano";}
-
-    bool n;
-};
-
-class Real : public Node {
-  public:
-    Real(double n) : n(n) {}
-    void printTree();
-    ST::Type getType(){return ST::real_t;}
-    const char* getTypeTxt(){return "real";}
-
-    double n;
-};
-
-class Integer : public Node {
-  public:
-    Integer(int n) : n(n) {}
-    void printTree();
-    ST::Type getType(){return ST::integer_t;}
-    const char* getTypeTxt(){return "inteiro";}
-
-    int n;
-};
-
-class Parentheses : public Node {
-  public:
-    Parentheses(Node* expr) : expr(expr) {}
-    void printTree();
-    ST::Type getType();
-
-    Node* expr;
-};
-
-class Variable : public Node {
-  public:
-    Variable(std::string id, Node *next, Use u):
-            id(id), next(next), use(u) {}
-    virtual void printTree();
-    virtual ST::Type getType();
-    virtual const char* getTypeTxt();
-
-    std::string id;
-    Node *next;
-    Use use;//pra que que a variavel sera usada?
-};
-
-class Array : public Variable {
-  public:
-    Array(std::string id, Node *next, Use u) :
-        Variable(id, next, u){}
-
-    Array(std::string id, Node *next, Node *i, Use u) :
-        Variable(id, next, u){ index = i; }
-
-    void printTree();
-    const char* getTypeTxt();
-
-    int getSize();
-
-    Node *index;
-};
-
-class BinOp : public Node {
-  public:
-    BinOp(Node *left, BinOperation op, Node *right);
-    void printTree();
-    ST::Type getType();
-    const char* getTypeTxt();
-    const char* getOpTxt();
-
-    Node *left;
-    BinOperation op;
-    Node *right;
-};
-
-class UniOp : public Node {
-  public:
-    UniOp(Node *expr, UniOperation op);
-    void printTree();
-    ST::Type getType();
-    const char* getTypeTxt();
-    const char* getOpTxt();
-
-    Node *expr;
-    UniOperation op;
+    Types::Type type;
 };
 
 class Block : public Node{
@@ -126,6 +32,65 @@ class Block : public Node{
     void printTree();
 
     NodeList lines;
+};
+
+class Value : public Node {
+  public:
+    Value(std::string n, Types::Type type):
+      n(n), Node(type){}
+    void printTree();
+
+    std::string n;
+};
+
+class Variable : public Node {
+  public:
+    Variable(std::string id, Node *next, Use use,
+      Types::Type type=Types::unknown_t):
+      id(id), next(next), use(use), Node(type){}
+    void printTree();
+    void setType(Types::Type t){type=t;}
+
+    std::string id;
+    Node *next;
+    Use use;
+};
+
+class Array : public Variable {
+  public:
+    Array(std::string id, Node *next, Use use,
+      Types::Type type=Types::unknown_t):
+      Variable(id,next,use,type){}
+
+    Array(std::string id, Node *next, Node *i, Use use,
+      Types::Type type=Types::unknown_t):
+      Variable(id,next,use,type){index = i;}
+
+    void printTree();
+    void setSize(int n){size = n;}
+
+    Node *index;
+    int size=0;
+};
+
+class BinOp : public Node {
+  public:
+    BinOp(Node *left, Ops::Operation op, Node *right);
+
+    void printTree();
+
+    Node *left, *right;
+    Ops::Operation op;
+};
+
+class UniOp : public Node {
+  public:
+    UniOp(Ops::Operation op, Node *right);
+
+    void printTree();
+
+    Node *right;
+    Ops::Operation op;
 };
 
 }

@@ -2,7 +2,9 @@
 #include <string>
 #include "ast.hpp"
 #include "st.hpp"
+#include "util.hpp"
 #include "parser.hpp"
+
 extern int yylineno;
 void yyerror(const char* s, ...);
 %}
@@ -13,16 +15,16 @@ void yyerror(const char* s, ...);
 
 [ \t\n\r]                       ; //ignores spaces and new lines
  /* int value/type */
-[0-9]+                          {yylval.int_v = std::atoi(yytext); return INT_V;}
-"int"                           {yylval.type = ST::integer_t; return INT_T;}
+[0-9]+                          {yylval.value = strdup(yytext); return INT_V;}
+"int"                           {yylval.type = Types::integer_t; return INT_T;}
  /* real value/type */
 [0-9]+\.[0-9]* |
-[0-9]*\.[0-9]+                  {yylval.real_v = std::atof(yytext); return REAL_V;}
-"real"                          {yylval.type = ST::real_t; return REAL_T;}
+[0-9]*\.[0-9]+                  {yylval.value = strdup(yytext); return REAL_V;}
+"real"                          {yylval.type = Types::real_t; return REAL_T;}
  /* bool value/type */
-"TRUE"                          {yylval.bool_v = true; return BOOL_V;}
-"FALSE"                         {yylval.bool_v = false; return BOOL_V;}
-"bool"                          {yylval.type = ST::bool_t; return BOOL_T;}
+"TRUE"                          {yylval.value = strdup(yytext); return BOOL_V;}
+"FALSE"                         {yylval.value = strdup(yytext); return BOOL_V;}
+"bool"                          {yylval.type = Types::bool_t; return BOOL_T;}
  /* exit program */
 "exit"                          {return 0;}
  /* single character */
@@ -52,10 +54,14 @@ void yyerror(const char* s, ...);
 ":="                            {return ASSIGN_OPT;}
  /* return */
 "return"                        {return RETURN_T;}
+ /* functions */
+"def fun"                       {return DEFFUN_T;}
+"end def"                       {return ENDDEF_T;}
+"decl fun"                      {return DECLFUN_T;}
  /* ids */
-[a-z]+                          {yylval.name = strdup(yytext); return ID_V;}
+[a-z]+                          {yylval.value = strdup(yytext); return ID_V;}
  /* any other thing */
-.                               {yyerror("lexico: simbolo desconhecido: %c.\n", *yytext);} /*complains about every unknown character*/
+.                               {yyerror("lexico: simbolo desconhecido: %c.", *yytext);} /*complains about every unknown character*/
 
 %%
 
@@ -64,4 +70,5 @@ void yyerror(const char *s, ...){
     va_start(ap, s);
     std::fprintf(stderr, "[Linha %d] Erro ", yylineno);
     std::vfprintf(stderr, s, ap);
+    std::fprintf(stderr, "\n");
 }

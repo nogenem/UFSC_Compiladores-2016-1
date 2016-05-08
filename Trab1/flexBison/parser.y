@@ -1,6 +1,7 @@
 %{
 #include "ast.hpp"
 #include "st.hpp"
+#include "util.hpp"
 
 AST::Block *programRoot; /* the root node of our program AST:: */
 ST::SymbolTable *symtab = new ST::SymbolTable(NULL);  /* main symbol table */
@@ -12,40 +13,36 @@ extern void yyerror(const char* s, ...);
   ASK:
 
   TODO:
-    Repensar em como fazer as mensagens de erro...
+	   DEFFUN_T vartype : ID_V (dparamlist) newscope lines ENDDEF_T
+     Botar scope no block?
 */
 %}
 
 %define parse.trace
 
 %union {
-  int int_v;
-  double real_v;
-  bool bool_v;
-  const char *name;
+  const char *value;
   AST::Node *node;
   AST::Block *block;
-  ST::Type type;
+  Types::Type type;
 }
 
-%token<int_v> INT_V
-%token<real_v> REAL_V
-%token<bool_v> BOOL_V
-%token<name> ID_V
+%token<value> INT_V REAL_V BOOL_V ID_V
 %token<type> INT_T REAL_T BOOL_T
-%token RETURN_T
+%token RETURN_T DEFFUN_T ENDDEF_T DECLFUN_T ASSIGN_OPT
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %token AND_OPT OR_OPT NOT_OPT
 
-%type <node> line varlist expr arraylist
+%type <node> line decl assign target varlist arraylist expr term
 %type <block> program lines
 %type <type> vartype
 
+%left AND_OPT OR_OPT
+%left NOT_OPT
 %nonassoc EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
-%right ASSIGN_OPT
-%left '+' '-' AND_OPT OR_OPT
+%left '+' '-'
 %left '*' '/'
-%right NOT_OPT U_MINUS
+%nonassoc U_MINUS
 %nonassoc error
 
 /* Starting rule
@@ -57,19 +54,26 @@ extern void yyerror(const char* s, ...);
 program : lines { programRoot = $1; }
 		    ;
 
-lines   : line ';' { $$ = new AST::Block();
+lines   : line { $$ = new AST::Block();
                      if($1 != NULL) $$->lines.push_back($1); }
-        | lines line ';' { if($2 != NULL) $1->lines.push_back($2); }
-        | lines error ';' { yyerrok; std::cout << "\n"; }
+        | lines line { if($2 != NULL) $1->lines.push_back($2); }
         ;
 
-line    : vartype ':' varlist { $$ = $3; symtab->setType($$, $1); }
+line    : decl ';' {$$ = $1;}
+        | assign ';' {$$ = $1;}
+        | error ';' { yyerrok; $$ = NULL; }
+        ;
+
+decl    : vartype ':' varlist { $$ = $3; symtab->setType($$, $1); }
         | vartype '[' INT_V ']' ':' arraylist { $$ = $6; symtab->setType($$, $1);
-                                            symtab->setArraySize($$, $3); }
-        | ID_V ASSIGN_OPT expr { AST::Node *var = symtab->assignVariable($1);
-                                 $$ = new AST::BinOp(var, AST::assign, $3); }
-        | ID_V '[' expr ']' ASSIGN_OPT expr { AST::Node *var = symtab->assignArray($1, $3);
-                                              $$ = new AST::BinOp(var, AST::assign, $6); }
+                                              symtab->setArraySize($$, std::atoi($3)); }
+        ;
+
+assign  : target ASSIGN_OPT expr { $$ = new AST::BinOp($1, Ops::assign, $3); }
+        ;
+
+target  : ID_V { $$ = symtab->assignVariable($1); }
+        | ID_V '[' expr ']' { $$ = symtab->assignArray($1, $3); }
         ;
 
 vartype : INT_T  { $$ = $1; }
@@ -85,25 +89,28 @@ arraylist : ID_V { $$ = symtab->newVariable($1, NULL, true); }
           | arraylist ',' ID_V { $$ = symtab->newVariable($3, $1, true); }
           ;
 
-expr    : BOOL_V { $$ = new AST::Bool($1); }
-        | INT_V { $$ = new AST::Integer($1); }
-        | REAL_V { $$ = new AST::Real($1); }
+expr    : term { $$ = $1; }
+        | expr '+' expr { $$ = new AST::BinOp($1, Ops::plus, $3); }
+        | expr '-' expr { $$ = new AST::BinOp($1, Ops::b_minus, $3); }
+        | expr '*' expr { $$ = new AST::BinOp($1, Ops::times, $3); }
+        | expr '/' expr { $$ = new AST::BinOp($1, Ops::division, $3); }
+        | expr AND_OPT expr { $$ = new AST::BinOp($1, Ops::b_and, $3); }
+        | expr OR_OPT expr { $$ = new AST::BinOp($1, Ops::b_or, $3); }
+        | expr EQ_OPT expr { $$ = new AST::BinOp($1, Ops::eq, $3); }
+        | expr NEQ_OPT expr { $$ = new AST::BinOp($1, Ops::neq, $3); }
+        | expr GRT_OPT expr { $$ = new AST::BinOp($1, Ops::grt, $3); }
+        | expr LST_OPT expr { $$ = new AST::BinOp($1, Ops::lst, $3); }
+        | expr GRTEQ_OPT expr { $$ = new AST::BinOp($1, Ops::grteq, $3); }
+        | expr LSTEQ_OPT expr { $$ = new AST::BinOp($1, Ops::lsteq, $3); }
+        | '-' expr %prec U_MINUS { $$ = new AST::UniOp(Ops::u_minus, $2); }
+        | NOT_OPT expr { $$ = new AST::UniOp(Ops::u_not, $2); }
+        | '(' expr ')' { $$ = new AST::UniOp(Ops::u_paren, $2); }
+        ;
+
+term    : BOOL_V { $$ = new AST::Value($1, Types::bool_t); }
+        | INT_V { $$ = new AST::Value($1, Types::integer_t); }
+        | REAL_V { $$ = new AST::Value($1, Types::real_t); }
         | ID_V { $$ = symtab->useVariable($1); }
         | ID_V '[' expr ']' { $$ = symtab->useArray($1, $3); }
-        | '(' expr ')' { $$ = new AST::Parentheses($2); }
-        | expr '+' expr { $$ = new AST::BinOp($1, AST::plus, $3); }
-        | expr '-' expr { $$ = new AST::BinOp($1, AST::b_minus, $3); }
-        | expr '*' expr { $$ = new AST::BinOp($1, AST::times, $3); }
-        | expr '/' expr { $$ = new AST::BinOp($1, AST::division, $3); }
-        | expr AND_OPT expr { $$ = new AST::BinOp($1, AST::b_and, $3); }
-        | expr OR_OPT expr { $$ = new AST::BinOp($1, AST::b_or, $3); }
-        | expr EQ_OPT expr { $$ = new AST::BinOp($1, AST::eq, $3); }
-        | expr NEQ_OPT expr { $$ = new AST::BinOp($1, AST::neq, $3); }
-        | expr GRT_OPT expr { $$ = new AST::BinOp($1, AST::grt, $3); }
-        | expr LST_OPT expr { $$ = new AST::BinOp($1, AST::lst, $3); }
-        | expr GRTEQ_OPT expr { $$ = new AST::BinOp($1, AST::grteq, $3); }
-        | expr LSTEQ_OPT expr { $$ = new AST::BinOp($1, AST::lsteq, $3); }
-        | '-' expr %prec U_MINUS { $$ = new AST::UniOp($2, AST::u_minus); }
-        | NOT_OPT expr { $$ = new AST::UniOp($2, AST::u_not); }
         ;
 %%
