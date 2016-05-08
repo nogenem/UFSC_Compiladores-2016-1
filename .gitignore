@@ -35,6 +35,6 @@ obj/
 *.depend
 
 # Arquivos gerados pelo flex e bison 
-parser.h
+parser.hpp
 parser.cpp
 scanner.cpp
