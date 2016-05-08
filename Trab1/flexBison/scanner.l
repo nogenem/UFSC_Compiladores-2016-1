@@ -2,7 +2,7 @@
 #include <string>
 #include "ast.hpp"
 #include "st.hpp"
-#include "parser.h"
+#include "parser.hpp"
 extern int yylineno;
 void yyerror(const char* s, ...);
 %}
