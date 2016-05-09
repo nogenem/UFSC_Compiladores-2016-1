@@ -9,17 +9,21 @@ namespace ST {
 
 class Symbol;
 
-enum Kind { variable_t, array_t };
+enum Kind { variable_t, array_t, function_t };
 typedef std::map<std::string, Symbol*> SymbolList; //Set of Symbols
 
 class Symbol {
   public:
     Symbol(Kind k): kind(k), type(Types::integer_t),
-      initialized(false) {}
+      initialized(false), params(nullptr) {}
+
+    Symbol(AST::Node *params, Types::Type type): kind(function_t), type(type),
+      initialized(false), params(params) {}
 
     Kind kind;
     Types::Type type;
     bool initialized;//initialized/defined?
+    AST::Node *params;
 };
 
 class SymbolTable {
@@ -30,6 +34,8 @@ class SymbolTable {
     bool checkId(std::string id, bool creation=false);
     void addSymbol(std::string id, Symbol *newsymbol);
     AST::Node* newVariable(std::string id, AST::Node* next, bool isArray);
+    AST::Node* newParam(std::string id, AST::Node *next, Types::Type type, bool isArray);
+    AST::Node* declFunction(std::string id, AST::Node *params, Types::Type type);
     AST::Node* assignVariable(std::string id);
     AST::Node* assignArray(std::string id, AST::Node *index);
     AST::Node* useVariable(std::string id);

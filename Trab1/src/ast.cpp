@@ -101,24 +101,30 @@ void Value::printTree(){
 }
 
 void Variable::printTree(){
-  if(next != NULL){
-    next->printTree();
-    std::cout << ", ";
+  if(use == param){
+    std::cout << "parametro " << Types::mascType[type] << ": " << id << "\n";
+    if(next != NULL) next->printTree();
   }else{
-    switch (use) {
-      case declr:
-        std::cout << "Declaracao de variavel " << Types::femType[type] << ": ";
-        break;
-      case attr:
-        std::cout << "Atribuicao de valor para variavel " <<
-          Types::femType[type]  << " ";
-        break;
-      case read:
-        std::cout << "variavel " << Types::femType[type] << " ";
-        break;
+    if(next != NULL){
+      next->printTree();
+      std::cout << ", ";
+    }else{
+      switch (use) {
+        case declr:
+          std::cout << "Declaracao de variavel " << Types::femType[type] << ": ";
+          break;
+        case attr:
+          std::cout << "Atribuicao de valor para variavel " <<
+            Types::femType[type]  << " ";
+          break;
+        case read:
+          std::cout << "variavel " << Types::femType[type] << " ";
+          break;
+        default: break;
+      }
     }
+    std::cout << id;
   }
-  std::cout << id;
 }
 
 void Array::printTree(){
@@ -140,10 +146,23 @@ void Array::printTree(){
       case read:
         std::cout << "arranjo " << Types::mascType[type] << " ";
         break;
+      default: break;
     }
   }
   if(use != attr)
     std::cout << id;
+}
+
+void Function::printTree(){
+  switch (use) {
+    case declr:
+      std::cout << "Declaracao de funcao " << Types::femType[type] <<
+        ": " << id << "\n+parametros:\n";
+      params->printTree();
+      std::cout << "Fim declaracao";
+      break;
+    default: break;
+  }
 }
 
 void Block::printTree(){

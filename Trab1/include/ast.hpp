@@ -10,7 +10,7 @@ extern void yyerror(const char* s, ...);
 
 namespace AST {
 
-enum Use { attr, declr, read };
+enum Use { attr, declr, read, param };
 
 class Node;
 
@@ -28,10 +28,12 @@ class Node {
 
 class Block : public Node{
   public:
-    Block(){}
+    Block(ST::SymbolTable *symtab):
+      symtab(symtab){}
     void printTree();
 
     NodeList lines;
+    ST::SymbolTable *symtab;
 };
 
 class Value : public Node {
@@ -71,6 +73,21 @@ class Array : public Variable {
 
     Node *index;
     int size=0;
+};
+
+class Function : public Node {
+  public:
+    Function(std::string id, Node *params, Node *block, Use use,
+      Types::Type type=Types::unknown_t):
+      id(id), params(params), block(block), use(use), type(type){}
+
+    void printTree();
+
+    std::string id;
+    Node *params;
+    Node *block;
+    Use use;
+    Types::Type type;
 };
 
 class BinOp : public Node {

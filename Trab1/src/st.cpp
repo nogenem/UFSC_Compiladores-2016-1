@@ -39,6 +39,27 @@ AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next, bool isArra
     return new AST::Variable(id, next, AST::declr);
 }
 
+AST::Node* SymbolTable::newParam(std::string id, AST::Node *next, Types::Type type, bool isArray){
+  if ( checkId(id, true) ) yyerror("semantico: redeclaracao do parametro %s.", id.c_str());
+  else{
+    Symbol *entry = new Symbol(isArray ? array_t : variable_t);
+    entry->type = type;
+    entry->initialized = true;
+    addSymbol(id,entry);
+  }
+  return isArray ? new AST::Array(id, next, AST::param) :
+    new AST::Variable(id, next, AST::param);
+}
+
+AST::Node* SymbolTable::declFunction(std::string id, AST::Node *params, Types::Type type){
+  if ( checkId(id, true) ) yyerror("semantico: redeclaracao da funcao %s.", id.c_str());
+  else {
+    Symbol *entry = new Symbol(params, type);
+    addSymbol(id, entry);
+  }
+  return new AST::Function(id, params, nullptr, AST::declr, type);
+}
+
 AST::Node* SymbolTable::assignVariable(std::string id){
   if ( ! checkId(id) ) yyerror("semantico: variavel %s nao declarada.", id.c_str());
   auto symbol = getSymbol(id);
