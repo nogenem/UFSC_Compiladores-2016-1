@@ -12,9 +12,12 @@ extern void yyerror(const char* s, ...);
 /*
   ASK:
     Gambiarra do newscope
+    def fun - def    fun?
+    funcao vazia (def fun int: s() end def)?
 
   TODO:
-	   Botar arrays nos parametros
+    checar tamanho dos arranjos
+      [Linha 1] Erro semantico: arranjo v com tamanho menor do que um.
 */
 %}
 
@@ -34,7 +37,7 @@ extern void yyerror(const char* s, ...);
 %token AND_OPT OR_OPT NOT_OPT
 
 %type <node> line decl def assign target expr term
-%type <node> varlist arraylist declparams defparams
+%type <node> varlist arraylist dparamlist
 %type <block> program lines
 %type <type> vartype
 
@@ -62,19 +65,20 @@ lines   : line { $$ = new AST::Block(symtab);
 
 line    : decl ';' {$$ = $1;}
         | assign ';' {$$ = $1;}
-        | def ';' { $$ = $1; }
+        | DEFFUN_T def ENDDEF_T { $$ = $2; }
         | error ';' { yyerrok; $$ = NULL; }
         ;
 
 decl    : vartype ':' varlist { $$ = $3; symtab->setType($$, $1); }
         | vartype '[' INT_V ']' ':' arraylist { $$ = $6; symtab->setType($$, $1);
                                       symtab->setArraySize($$, std::atoi($3)); }
-        | DECLFUN_T vartype ':' ID_V '(' declparams ')'
+        | DECLFUN_T vartype ':' ID_V '(' dparamlist ')'
               { $$ = symtab->declFunction($4, $6, $2); }
         ;
 
-def     : newscope DEFFUN_T vartype ':' ID_V '(' defparams ')' lines ENDDEF_T
-            { $$ = NULL; }
+def     : vartype ':' ID_V '(' dparamlist ')' newscope lines
+            { symtab = symtab->getPrevious();
+              $$ = NULL; }
         ;
 
 assign  : target ASSIGN_OPT expr { $$ = new AST::BinOp($1, Ops::assign, $3); }
@@ -97,12 +101,12 @@ arraylist : ID_V { $$ = symtab->newVariable($1, NULL, true); }
           | arraylist ',' ID_V { $$ = symtab->newVariable($3, $1, true); }
           ;
 
-declparams  : vartype ':' ID_V { $$ = new AST::Variable($3, NULL, AST::param, $1); }
-            | vartype ':' ID_V ',' declparams { $$ = new AST::Variable($3, $5, AST::param, $1); }
-            ;
-
-defparams   : vartype ':' ID_V { $$ = symtab->newParam($3, NULL, $1, false); }
-            | vartype ':' ID_V ',' defparams { $$ = symtab->newParam($3, $5, $1, false); }
+dparamlist  : vartype ':' ID_V { $$ = new AST::Variable($3, NULL, AST::param, $1); }
+            | vartype '[' INT_V ']' ':' ID_V
+                { $$ = new AST::Array($6, NULL, AST::param, std::atoi($3), $1); }
+            | vartype ':' ID_V ',' dparamlist { $$ = new AST::Variable($3, $5, AST::param, $1); }
+            | vartype '[' INT_V ']' ':' ID_V ',' dparamlist
+                            { $$ = new AST::Array($6, $8, AST::param, std::atoi($3), $1); }
             ;
 
 newscope    : { symtab = new ST::SymbolTable(symtab); }

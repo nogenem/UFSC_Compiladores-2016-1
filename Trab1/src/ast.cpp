@@ -128,29 +128,35 @@ void Variable::printTree(){
 }
 
 void Array::printTree(){
-  if(next != NULL){
-    next->printTree();
-    std::cout << ", ";
+  if(use == param){
+    std::cout << "parametro " << Types::mascType[type] << " de tamanho " <<
+      size << ": " << id << "\n";
+    if(next != NULL) next->printTree();
   }else{
-    switch (use) {
-      case declr:
-        std::cout << "Declaracao de arranjo " << Types::mascType[type]
-          << " de tamanho " << size << ": ";
-        break;
-      case attr:
-        std::cout << "Atribuicao de valor para arranjo " <<
-          Types::mascType[type]  << " " << id << ":\n+indice: ";
-        index->printTree();
-        std::cout << "\n+valor";
-        break;
-      case read:
-        std::cout << "arranjo " << Types::mascType[type] << " ";
-        break;
-      default: break;
+    if(next != NULL){
+      next->printTree();
+      std::cout << ", ";
+    }else{
+      switch (use) {
+        case declr:
+          std::cout << "Declaracao de arranjo " << Types::mascType[type]
+            << " de tamanho " << size << ": ";
+          break;
+        case attr:
+          std::cout << "Atribuicao de valor para arranjo " <<
+            Types::mascType[type]  << " " << id << ":\n+indice: ";
+          index->printTree();
+          std::cout << "\n+valor";
+          break;
+        case read:
+          std::cout << "arranjo " << Types::mascType[type] << " ";
+          break;
+        default: break;
+      }
     }
+    if(use != attr)
+      std::cout << id;
   }
-  if(use != attr)
-    std::cout << id;
 }
 
 void Function::printTree(){

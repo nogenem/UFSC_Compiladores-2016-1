@@ -64,6 +64,10 @@ class Array : public Variable {
       Types::Type type=Types::unknown_t):
       Variable(id,next,use,type){}
 
+    Array(std::string id, Node *next, Use use, int aSize,
+      Types::Type type=Types::unknown_t):
+      Variable(id,next,use,type){ size = aSize; }
+
     Array(std::string id, Node *next, Node *i, Use use,
       Types::Type type=Types::unknown_t):
       Variable(id,next,use,type){index = i;}
@@ -75,19 +79,16 @@ class Array : public Variable {
     int size=0;
 };
 
-class Function : public Node {
+class Function : public Variable {
   public:
     Function(std::string id, Node *params, Node *block, Use use,
       Types::Type type=Types::unknown_t):
-      id(id), params(params), block(block), use(use), type(type){}
+      params(params), block(block), Variable(id,nullptr,use,type){}
 
     void printTree();
 
-    std::string id;
     Node *params;
     Node *block;
-    Use use;
-    Types::Type type;
 };
 
 class BinOp : public Node {
