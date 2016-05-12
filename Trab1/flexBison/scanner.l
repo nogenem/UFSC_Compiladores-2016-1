@@ -55,13 +55,14 @@ void yyerror(const char* s, ...);
  /* return */
 "return"                        {return RETURN_T;}
  /* functions */
-"def fun"                       {return DEFFUN_T;}
-"end def"                       {return ENDDEF_T;}
-"decl fun"                      {return DECLFUN_T;}
+"def"                           {return DEF_T;}
+"fun"                           {return FUN_T;}
+"end"                           {return END_T;}
+"decl"                          {return DECL_T;}
  /* ids */
 [a-z]+                          {yylval.value = strdup(yytext); return ID_V;}
  /* any other thing */
-.                               {yyerror("lexico: simbolo desconhecido: %c.", *yytext);} /*complains about every unknown character*/
+.                               {Errors::print(Errors::unknown_symbol, *yytext);} /*complains about every unknown character*/
 
 %%
 

@@ -3,8 +3,6 @@
 
 using namespace ST;
 
-extern void yyerror(const char* s, ...);
-
 bool SymbolTable::checkId(std::string id, bool creation/*=false*/){
   bool result = _entryList.find(id) != _entryList.end();
   if(creation)
@@ -28,9 +26,13 @@ Symbol* SymbolTable::getSymbol(std::string id){
 }
 
 AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next, bool isArray){
-  if ( checkId(id, true) ) yyerror("semantico: redefinicao da variavel %s.", id.c_str());
-  else {
-     Symbol *entry = new Symbol(isArray ? array_t : variable_t);
+  Kinds::Kind kind = isArray ? Kinds::array_t : Kinds::variable_t;
+  if ( checkId(id, true) ){
+    auto symbol = getSymbol(id);
+    Errors::print(Errors::redefinition,
+      Kinds::kindName[symbol->kind], id.c_str());
+  }else {
+     Symbol *entry = new Symbol(kind);
      addSymbol(id,entry); //Adds variable to symbol table
   }
   if(isArray)
@@ -40,8 +42,11 @@ AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next, bool isArra
 }
 
 AST::Node* SymbolTable::declFunction(std::string id, AST::Node *params, Types::Type type){
-  if ( checkId(id, true) ) yyerror("semantico: redeclaracao da variavel %s.", id.c_str());
-  else {
+  if ( checkId(id, true) ){
+    auto symbol = getSymbol(id);
+    Errors::print(Errors::redefinition,
+      Kinds::kindName[symbol->kind], id.c_str());
+  }else {
     Symbol *entry = new Symbol(params, type);
     addSymbol(id, entry);
   }
@@ -49,66 +54,79 @@ AST::Node* SymbolTable::declFunction(std::string id, AST::Node *params, Types::T
 }
 
 AST::Node* SymbolTable::assignVariable(std::string id){
-  if ( ! checkId(id) ) yyerror("semantico: variavel %s nao declarada.", id.c_str());
+  if ( ! checkId(id) ) Errors::print(Errors::without_declaration,
+    Kinds::kindName[Kinds::variable_t], id.c_str());
   auto symbol = getSymbol(id);
   auto type = Types::unknown_t;
   if(symbol != nullptr){
-    if(symbol->kind != variable_t)
-      yyerror("semantico: atribuicao esperava variavel e recebeu array.");
-    symbol->initialized = true;
-    type = symbol->type;
+    if(symbol->kind != Kinds::variable_t){
+      Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind], id.c_str(),
+        Kinds::kindName[Kinds::variable_t]);
+    }else{
+      symbol->initialized = true;
+      type = symbol->type;
+    }
   }
   return new AST::Variable(id, NULL, AST::attr, type);
 }
 
 AST::Node* SymbolTable::assignArray(std::string id, AST::Node *index){
-  if( !checkId(id) ) yyerror("semantico: variavel %s nao declarada.", id.c_str());
+  if( !checkId(id) ) Errors::print(Errors::without_declaration,
+    Kinds::kindName[Kinds::function_t], id.c_str());
 
   auto symbol = getSymbol(id);
   auto type = Types::unknown_t;
   if(symbol != nullptr){
-    if(symbol->kind != array_t)
-      yyerror("semantico: atribuicao esperava array e recebeu variavel.");
-    type = symbol->type;
+    if(symbol->kind != Kinds::array_t)
+      Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
+        id.c_str(), Kinds::kindName[Kinds::array_t]);
+    else
+      type = symbol->type;
   }
   if(index == nullptr || index->type != Types::integer_t)
-    yyerror("semantico: indice espera um inteiro.");
+    Errors::print(Errors::index_wrong_type, Types::mascType[index->type]);
 
-  return new AST::Array(id, nullptr, index, AST::attr, type);
+  return new AST::Array(id, index, AST::attr, type);
 }
 
 AST::Node* SymbolTable::useVariable(std::string id){
-  if ( ! checkId(id) ) yyerror("semantico: variavel %s nao declarada.", id.c_str());
+  if ( ! checkId(id) ) Errors::print(Errors::without_declaration,
+    Kinds::kindName[Kinds::variable_t], id.c_str());
 
   auto symbol = getSymbol(id);
   auto type = Types::unknown_t;
   if ( symbol != nullptr ){
-    if(symbol->kind != variable_t)
-      yyerror("semantico: esperava o uso de uma variavel mas recebeu um arranjo.");
-    if(symbol->kind==variable_t && !symbol->initialized)
-      yyerror("semantico: variavel %s nao inicializada.", id.c_str());
+    if(symbol->kind != Kinds::variable_t)
+      Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
+        id.c_str(), Kinds::kindName[Kinds::variable_t]);
+    if(symbol->kind==Kinds::variable_t && !symbol->initialized)
+      Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
+        id.c_str());
     type = symbol->type;
   }else{
-    yyerror("semantico: variavel %s nao inicializada.", id.c_str());
+    Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
+      id.c_str());
   }
 
   return new AST::Variable(id, NULL, AST::read, type);
 }
 
 AST::Node* SymbolTable::useArray(std::string id, AST::Node *index){
-  if( !checkId(id) ) yyerror("semantico: variavel %s nao declarada.", id.c_str());
+  if( !checkId(id) ) Errors::print(Errors::without_declaration,
+    Kinds::kindName[Kinds::array_t], id.c_str());
 
   auto symbol = getSymbol(id);
-  auto type = Types::unknown_t;
+  Types::Type type = Types::unknown_t;
   if(symbol != nullptr){
-    if(symbol->kind != array_t)
-      yyerror("semantico: esperava o uso de um arranjo mas recebeu uma variavel.");
+    if(symbol->kind != Kinds::array_t)
+      Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
+        id.c_str(), Kinds::kindName[Kinds::array_t]);
     type = symbol->type;
   }
   if(index == nullptr || index->type != Types::integer_t)
-    yyerror("semantico: indice espera um inteiro.");
+    Errors::print(Errors::index_wrong_type, Types::mascType[index->type]);
 
-  return new AST::Array(id, nullptr, index, AST::read, type);
+  return new AST::Array(id, index, AST::read, type);
 }
 
 void SymbolTable::setType(AST::Node *node, Types::Type type){

@@ -11,13 +11,20 @@ extern void yyerror(const char* s, ...);
 
 /*
   ASK:
-    Gambiarra do newscope
-    def fun - def    fun?
-    funcao vazia (def fun int: s() end def)?
+	decl fun int: soma(int: a, int: b);				    [vai da erro em tudo pq tem q usar o param
+                                                 salvo]
+	def fun real: soma(real: x, real: y)
+	  return x + y;
+	end def
+
+	eh obrigado a ter return na funcao?				    [sim]
+
+
+
+  int[10]: ar, b;                               [perguntar se são mesmo 3 erros]
+  ar := b;
 
   TODO:
-    checar tamanho dos arranjos
-      [Linha 1] Erro semantico: arranjo v com tamanho menor do que um.
 */
 %}
 
@@ -32,7 +39,7 @@ extern void yyerror(const char* s, ...);
 
 %token<value> INT_V REAL_V BOOL_V ID_V
 %token<type> INT_T REAL_T BOOL_T
-%token RETURN_T DEFFUN_T ENDDEF_T DECLFUN_T ASSIGN_OPT
+%token RETURN_T DEF_T END_T DECL_T FUN_T ASSIGN_OPT
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %token AND_OPT OR_OPT NOT_OPT
 
@@ -59,21 +66,22 @@ program : lines { programRoot = $1; }
 		    ;
 
 lines   : line { $$ = new AST::Block(symtab);
-                     if($1 != NULL) $$->lines.push_back($1); }
+                 if($1 != NULL) $$->lines.push_back($1); }
         | lines line { if($2 != NULL) $1->lines.push_back($2); }
         ;
 
-line    : decl ';' {$$ = $1;}
-        | assign ';' {$$ = $1;}
-        | DEFFUN_T def ENDDEF_T { $$ = $2; }
-        | error ';' { yyerrok; $$ = NULL; }
+line    : decl ';'                      {$$ = $1;}
+        | assign ';'                    {$$ = $1;}
+        | DEF_T FUN_T def END_T DEF_T   { $$ = $3; }
+        | error ';'                     { yyerrok; $$ = NULL; }
         ;
 
 decl    : vartype ':' varlist { $$ = $3; symtab->setType($$, $1); }
-        | vartype '[' INT_V ']' ':' arraylist { $$ = $6; symtab->setType($$, $1);
-                                      symtab->setArraySize($$, std::atoi($3)); }
-        | DECLFUN_T vartype ':' ID_V '(' dparamlist ')'
-              { $$ = symtab->declFunction($4, $6, $2); }
+        | vartype '[' INT_V ']' ':' arraylist
+              { $$ = $6; symtab->setType($$, $1);
+                symtab->setArraySize($$, std::atoi($3)); }
+        | DECL_T FUN_T vartype ':' ID_V '(' dparamlist ')'
+              { $$ = symtab->declFunction($5, $7, $3); }
         ;
 
 def     : vartype ':' ID_V '(' dparamlist ')' newscope lines
@@ -84,8 +92,8 @@ def     : vartype ':' ID_V '(' dparamlist ')' newscope lines
 assign  : target ASSIGN_OPT expr { $$ = new AST::BinOp($1, Ops::assign, $3); }
         ;
 
-target  : ID_V { $$ = symtab->assignVariable($1); }
-        | ID_V '[' expr ']' { $$ = symtab->assignArray($1, $3); }
+target  : ID_V                { $$ = symtab->assignVariable($1); }
+        | ID_V '[' expr ']'   { $$ = symtab->assignArray($1, $3); }
         ;
 
 vartype : INT_T  { $$ = $1; }
@@ -93,47 +101,49 @@ vartype : INT_T  { $$ = $1; }
         | BOOL_T { $$ = $1; }
         ;
 
-varlist : ID_V { $$ = symtab->newVariable($1, NULL, false); }
-        | varlist ',' ID_V { $$ = symtab->newVariable($3, $1, false); }
+varlist : ID_V              { $$ = symtab->newVariable($1, NULL, false); }
+        | varlist ',' ID_V  { $$ = symtab->newVariable($3, $1, false); }
         ;
 
-arraylist : ID_V { $$ = symtab->newVariable($1, NULL, true); }
-          | arraylist ',' ID_V { $$ = symtab->newVariable($3, $1, true); }
+arraylist : ID_V                { $$ = symtab->newVariable($1, NULL, true); }
+          | arraylist ',' ID_V  { $$ = symtab->newVariable($3, $1, true); }
           ;
 
-dparamlist  : vartype ':' ID_V { $$ = new AST::Variable($3, NULL, AST::param, $1); }
+dparamlist  : vartype ':' ID_V
+                { $$ = new AST::Variable($3, NULL, AST::param, $1); }
             | vartype '[' INT_V ']' ':' ID_V
                 { $$ = new AST::Array($6, NULL, AST::param, std::atoi($3), $1); }
-            | vartype ':' ID_V ',' dparamlist { $$ = new AST::Variable($3, $5, AST::param, $1); }
+            | vartype ':' ID_V ',' dparamlist
+                { $$ = new AST::Variable($3, $5, AST::param, $1); }
             | vartype '[' INT_V ']' ':' ID_V ',' dparamlist
-                            { $$ = new AST::Array($6, $8, AST::param, std::atoi($3), $1); }
+                { $$ = new AST::Array($6, $8, AST::param, std::atoi($3), $1); }
             ;
 
 newscope    : { symtab = new ST::SymbolTable(symtab); }
             ;
 
-expr    : term { $$ = $1; }
-        | expr '+' expr { $$ = new AST::BinOp($1, Ops::plus, $3); }
-        | expr '-' expr { $$ = new AST::BinOp($1, Ops::b_minus, $3); }
-        | expr '*' expr { $$ = new AST::BinOp($1, Ops::times, $3); }
-        | expr '/' expr { $$ = new AST::BinOp($1, Ops::division, $3); }
-        | expr AND_OPT expr { $$ = new AST::BinOp($1, Ops::b_and, $3); }
-        | expr OR_OPT expr { $$ = new AST::BinOp($1, Ops::b_or, $3); }
-        | expr EQ_OPT expr { $$ = new AST::BinOp($1, Ops::eq, $3); }
-        | expr NEQ_OPT expr { $$ = new AST::BinOp($1, Ops::neq, $3); }
-        | expr GRT_OPT expr { $$ = new AST::BinOp($1, Ops::grt, $3); }
-        | expr LST_OPT expr { $$ = new AST::BinOp($1, Ops::lst, $3); }
-        | expr GRTEQ_OPT expr { $$ = new AST::BinOp($1, Ops::grteq, $3); }
-        | expr LSTEQ_OPT expr { $$ = new AST::BinOp($1, Ops::lsteq, $3); }
-        | '-' expr %prec U_MINUS { $$ = new AST::UniOp(Ops::u_minus, $2); }
-        | NOT_OPT expr { $$ = new AST::UniOp(Ops::u_not, $2); }
-        | '(' expr ')' { $$ = new AST::UniOp(Ops::u_paren, $2); }
+expr    : term                    { $$ = $1; }
+        | expr '+' expr           { $$ = new AST::BinOp($1, Ops::plus, $3); }
+        | expr '-' expr           { $$ = new AST::BinOp($1, Ops::b_minus, $3); }
+        | expr '*' expr           { $$ = new AST::BinOp($1, Ops::times, $3); }
+        | expr '/' expr           { $$ = new AST::BinOp($1, Ops::division, $3); }
+        | expr AND_OPT expr       { $$ = new AST::BinOp($1, Ops::b_and, $3); }
+        | expr OR_OPT expr        { $$ = new AST::BinOp($1, Ops::b_or, $3); }
+        | expr EQ_OPT expr        { $$ = new AST::BinOp($1, Ops::eq, $3); }
+        | expr NEQ_OPT expr       { $$ = new AST::BinOp($1, Ops::neq, $3); }
+        | expr GRT_OPT expr       { $$ = new AST::BinOp($1, Ops::grt, $3); }
+        | expr LST_OPT expr       { $$ = new AST::BinOp($1, Ops::lst, $3); }
+        | expr GRTEQ_OPT expr     { $$ = new AST::BinOp($1, Ops::grteq, $3); }
+        | expr LSTEQ_OPT expr     { $$ = new AST::BinOp($1, Ops::lsteq, $3); }
+        | '-' expr %prec U_MINUS  { $$ = new AST::UniOp(Ops::u_minus, $2); }
+        | NOT_OPT expr            { $$ = new AST::UniOp(Ops::u_not, $2); }
+        | '(' expr ')'            { $$ = new AST::UniOp(Ops::u_paren, $2); }
         ;
 
-term    : BOOL_V { $$ = new AST::Value($1, Types::bool_t); }
-        | INT_V { $$ = new AST::Value($1, Types::integer_t); }
-        | REAL_V { $$ = new AST::Value($1, Types::real_t); }
-        | ID_V { $$ = symtab->useVariable($1); }
-        | ID_V '[' expr ']' { $$ = symtab->useArray($1, $3); }
+term    : BOOL_V              { $$ = new AST::Value($1, Types::bool_t); }
+        | INT_V               { $$ = new AST::Value($1, Types::integer_t); }
+        | REAL_V              { $$ = new AST::Value($1, Types::real_t); }
+        | ID_V                { $$ = symtab->useVariable($1); }
+        | ID_V '[' expr ']'   { $$ = symtab->useArray($1, $3); }
         ;
 %%

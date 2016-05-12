@@ -1,22 +1,41 @@
 #include "ast.hpp"
 
-extern void yyerror(const char* s, ...);
 using namespace AST;
+
+Array::Array(std::string id, Node *next, Node *i,
+  Use use, int aSize, Types::Type type):
+  Variable(id,next,use,type){
+
+  if(aSize < 1){
+    aSize = 1;
+    Errors::print(Errors::array_index_lst_1, id.c_str());
+  }
+  size = aSize;
+  index = i;
+}
+
+void Array::setSize(int n){
+  if(n < 1){
+    n = 1;
+    Errors::print(Errors::array_index_lst_1, id.c_str());
+  }
+  size = n;
+}
 
 BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
   left(left), op(op), right(right){
 
   auto l = left->type;
-  auto ltxt = Types::mascType[l].c_str();
+  auto ltxt = Types::mascType[l];
   auto r = right->type;
-  auto rtxt = Types::mascType[r].c_str();
-  auto optxt = Ops::opName[op].c_str();
+  auto rtxt = Types::mascType[r];
+  auto optxt = Ops::opName[op];
 
   switch (op) {
     case Ops::assign:
       type = l;
       if(l != r && !(l==Types::real_t && r==Types::integer_t))
-        yyerror("semantico: operacao %s espera %s mas recebeu %s.", optxt, ltxt, rtxt);
+        Errors::print(Errors::op_wrong_type1, optxt, ltxt, rtxt);
       break;
 
     case Ops::plus:
@@ -30,11 +49,9 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
         type = Types::real_t;
       }
       if(l!=Types::integer_t && l!=Types::real_t)
-        yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.",
-                optxt, ltxt);
+        Errors::print(Errors::op_wrong_type2, optxt, ltxt);
       if(r!=Types::integer_t && r!=Types::real_t)
-        yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.",
-                optxt, rtxt);
+        Errors::print(Errors::op_wrong_type2, optxt, rtxt);
       break;
 
     }case Ops::eq:
@@ -45,20 +62,20 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
     case Ops::lsteq:
       type = Types::bool_t;
       if(l!=Types::integer_t && l!=Types::real_t)
-        yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.",
-                optxt, ltxt);
+        Errors::print(Errors::op_wrong_type2, optxt, ltxt);
       if(r!=Types::integer_t && r!=Types::real_t)
-        yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.",
-                optxt, rtxt);
+        Errors::print(Errors::op_wrong_type2, optxt, rtxt);
       break;
 
     case Ops::b_and:
     case Ops::b_or:
       type = Types::bool_t;
       if(l!=Types::bool_t)
-        yyerror("semantico: operacao %s espera booleano mas recebeu %s.", optxt, ltxt);
+        Errors::print(Errors::op_wrong_type1, optxt,
+          Types::mascType[Types::bool_t], ltxt);
       if(r!=Types::bool_t)
-        yyerror("semantico: operacao %s espera booleano mas recebeu %s.", optxt, rtxt);
+        Errors::print(Errors::op_wrong_type1, optxt,
+          Types::mascType[Types::bool_t], rtxt);
       break;
 
     default: type = Types::unknown_t;
@@ -69,14 +86,15 @@ UniOp::UniOp(Ops::Operation op, Node *right):
   op(op), right(right) {
 
   auto r = right->type;
-  auto rtxt = Types::mascType[r].c_str();
-  auto optxt = Ops::opName[op].c_str();
+  auto rtxt = Types::mascType[r];
+  auto optxt = Ops::opName[op];
 
   switch (op) {
     case Ops::u_not:
       type = Types::bool_t;
       if(r!=Types::bool_t)
-        yyerror("semantico: operacao %s espera booleano mas recebeu %s.", optxt, rtxt);
+        Errors::print(Errors::op_wrong_type1, optxt,
+          Types::mascType[Types::bool_t], rtxt);
       break;
 
     case Ops::u_minus:
@@ -84,8 +102,7 @@ UniOp::UniOp(Ops::Operation op, Node *right):
       if(r==Types::real_t || r==Types::integer_t)
         type = r;
       else
-        yyerror("semantico: operacao %s espera inteiro ou real mas recebeu %s.",
-            optxt, rtxt);
+        Errors::print(Errors::op_wrong_type2, optxt, rtxt);
       break;
 
     case Ops::u_paren:
@@ -149,12 +166,15 @@ void Array::printTree(){
           std::cout << "\n+valor";
           break;
         case read:
-          std::cout << "arranjo " << Types::mascType[type] << " ";
+          std::cout << "arranjo " << Types::mascType[type] << " " << id <<
+            " {+indice: ";
+          index->printTree();
+          std::cout << "}";
           break;
         default: break;
       }
     }
-    if(use != attr)
+    if(use == declr)
       std::cout << id;
   }
 }

@@ -6,8 +6,6 @@
 #include "st.hpp"
 #include "util.hpp"
 
-extern void yyerror(const char* s, ...);
-
 namespace AST {
 
 enum Use { attr, declr, read, param };
@@ -60,20 +58,21 @@ class Variable : public Node {
 
 class Array : public Variable {
   public:
+    Array(std::string id, Node *next, Use use):
+      Array(id,next,nullptr,use,1,Types::unknown_t){}
+
+    Array(std::string id, Node *index, Use use, Types::Type type):
+      Array(id,nullptr,index,use,1,type){}
+
     Array(std::string id, Node *next, Use use,
-      Types::Type type=Types::unknown_t):
-      Variable(id,next,use,type){}
+      int aSize, Types::Type type):
+      Array(id,next,nullptr,use,aSize,type){}
 
-    Array(std::string id, Node *next, Use use, int aSize,
-      Types::Type type=Types::unknown_t):
-      Variable(id,next,use,type){ size = aSize; }
-
-    Array(std::string id, Node *next, Node *i, Use use,
-      Types::Type type=Types::unknown_t):
-      Variable(id,next,use,type){index = i;}
+    Array(std::string id, Node *next, Node *i,
+      Use use, int aSize, Types::Type type);
 
     void printTree();
-    void setSize(int n){size = n;}
+    void setSize(int n);
 
     Node *index;
     int size=0;
