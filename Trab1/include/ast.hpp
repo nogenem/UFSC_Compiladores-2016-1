@@ -9,6 +9,8 @@
 namespace AST {
 
 enum Use { attr, declr, def, read, param };
+enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
+  function_nt, return_nt, binop_nt, uniop_nt };
 
 class Node;
 
@@ -20,6 +22,7 @@ class Node {
     Node(Types::Type type): type(type){}
     virtual ~Node() {}
     virtual void printTree(){}
+    virtual NodeType getNodeType(){return node_nt;}
 
     Types::Type type;
 };
@@ -29,6 +32,7 @@ class Block : public Node{
     Block(ST::SymbolTable *symtab):
       symtab(symtab){}
     void printTree();
+    NodeType getNodeType(){return block_nt;}
 
     NodeList lines;
     ST::SymbolTable *symtab;
@@ -39,6 +43,7 @@ class Value : public Node {
     Value(std::string n, Types::Type type):
       n(n), Node(type){}
     void printTree();
+    NodeType getNodeType(){return value_nt;}
 
     std::string n;
 };
@@ -49,6 +54,7 @@ class Variable : public Node {
       Types::Type type=Types::unknown_t):
       id(id), next(next), use(use), Node(type){}
     void printTree();
+    virtual NodeType getNodeType(){return variable_nt;}
 
     void setType(Types::Type t){type=t;}
     virtual Kinds::Kind getKind(){return Kinds::variable_t;}
@@ -74,6 +80,7 @@ class Array : public Variable {
     Array(std::string id, Node *next, Node *i,
       Use use, int aSize, Types::Type type);
     void printTree();
+    NodeType getNodeType(){return array_nt;}
 
     void setSize(int n);
     Kinds::Kind getKind(){return Kinds::array_t;}
@@ -86,9 +93,9 @@ class Array : public Variable {
 class Function : public Variable {
   public:
     Function(std::string id, Node *params, Node *block, Use use,
-      Types::Type type=Types::unknown_t):
-      params(params), block(block), Variable(id,nullptr,use,type){}//check return
+      Types::Type type=Types::unknown_t);
     void printTree();
+    NodeType getNodeType(){return function_nt;}
 
     Kinds::Kind getKind(){return Kinds::function_t;}
     bool equals(Variable *var, bool checkNext=false);
@@ -99,12 +106,13 @@ class Function : public Variable {
 
 class Return : public Node {
   public:
-    Return(Node *expr):expr(expr){}
-    Return(Node *expr, Types::Type funcType);
+    Return(Node *expr):expr(expr), Node(expr->type){}
 
     void printTree();
+    NodeType getNodeType(){return return_nt;}
 
     Node *expr;
+    Types::Type funcType=Types::unknown_t;
 };
 
 class BinOp : public Node {
@@ -112,6 +120,7 @@ class BinOp : public Node {
     BinOp(Node *left, Ops::Operation op, Node *right);
 
     void printTree();
+    NodeType getNodeType(){return binop_nt;}
 
     Node *left, *right;
     Ops::Operation op;
@@ -122,6 +131,7 @@ class UniOp : public Node {
     UniOp(Ops::Operation op, Node *right);
 
     void printTree();
+    NodeType getNodeType(){return uniop_nt;}
 
     Node *right;
     Ops::Operation op;

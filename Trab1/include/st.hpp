@@ -43,6 +43,7 @@ class SymbolTable {
     AST::Node* useArray(std::string id, AST::Node *index);
     void setType(AST::Node *node, Types::Type type);
     void setArraySize(AST::Node *node, int aSize);
+    void checkFuncs();
 
     SymbolList& getEntryList(){return _entryList;}
     SymbolTable* getPrevious(){return _previous;}

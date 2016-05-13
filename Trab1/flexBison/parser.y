@@ -14,21 +14,8 @@ extern void yyerror(const char* s, ...);
 
 /*
   ASK:
-  	decl fun int: soma(int: a, int: b);				    [vai da erro em tudo pq tem q usar o param
-                                                   salvo]
-  	def fun real: soma(real: x, real: y)
-  	  return x + y;
-  	end def
-
-  	eh obrigado a ter return na funcao?				    [sim]
 
   TODO:
-    //botar tipo como desconhecido
-    //check return
-
-    testar erro 22
-    criar erro de função nao declarada
-    funções só podem ser declaradas e definidas no escopo global
 */
 %}
 
@@ -47,9 +34,9 @@ extern void yyerror(const char* s, ...);
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %token AND_OPT OR_OPT NOT_OPT
 
-%type <node> line decl def assign target expr term
+%type <node> line fline decl def assign target expr term
 %type <node> varlist arraylist dparamlist
-%type <block> program lines
+%type <block> program lines flines
 %type <type> vartype
 %type <value> defid
 
@@ -67,7 +54,7 @@ extern void yyerror(const char* s, ...);
 
 %%
 
-program : lines { programRoot = $1; }
+program : lines { programRoot = $1; symtab->checkFuncs(); }
 		    ;
 
 lines   : line { $$ = new AST::Block(symtab);
@@ -75,9 +62,22 @@ lines   : line { $$ = new AST::Block(symtab);
         | lines line { if($2 != NULL) $1->lines.push_back($2); }
         ;
 
+flines  : fline { $$ = new AST::Block(symtab);
+                 if($1 != NULL) $$->lines.push_back($1); }
+        | flines fline { if($2 != NULL) $1->lines.push_back($2); }
+        ;
+
 line    : decl ';'                      {$$ = $1;}
         | assign ';'                    {$$ = $1;}
+        | DECL_T FUN_T vartype ':' ID_V '(' dparamlist ')' ';'
+              { $$ = symtab->declFunction($5, $7, $3); }
         | DEF_T FUN_T def END_T DEF_T   { $$ = $3; }
+        | RETURN_T expr ';'             { $$ = new AST::Return($2); }
+        | error ';'                     { yyerrok; $$ = NULL; }
+        ;
+
+fline   : decl ';'                      {$$ = $1;}
+        | assign ';'                    {$$ = $1;}
         | RETURN_T expr ';'             { $$ = new AST::Return($2); }
         | error ';'                     { yyerrok; $$ = NULL; }
         ;
@@ -86,11 +86,9 @@ decl    : vartype ':' varlist { $$ = $3; symtab->setType($$, $1); }
         | vartype '[' INT_V ']' ':' arraylist
               { $$ = $6; symtab->setType($$, $1);
                 symtab->setArraySize($$, std::atoi($3)); }
-        | DECL_T FUN_T vartype ':' ID_V '(' dparamlist ')'
-              { $$ = symtab->declFunction($5, $7, $3); }
         ;
 
-def     : vartype ':' defid '(' dparamlist ')' newscope lines
+def     : vartype ':' defid '(' dparamlist ')' newscope flines
             { symtab = symtab->getPrevious();
               $$ = symtab->defFunction($3, $5, $8, $1); }
         ;

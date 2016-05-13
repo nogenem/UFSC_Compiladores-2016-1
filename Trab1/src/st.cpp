@@ -138,18 +138,22 @@ AST::Node* SymbolTable::useVariable(std::string id){
     Kinds::kindName[Kinds::variable_t], id.c_str());
 
   auto symbol = getSymbol(id);
-  auto type = Types::unknown_t;
+  auto type = symbol->type;
   if ( symbol != nullptr ){
-    if(symbol->kind != Kinds::variable_t)//botar tipo como desconhecido
+    if(symbol->kind != Kinds::variable_t){
       Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
         id.c_str(), Kinds::kindName[Kinds::variable_t]);
-    if(symbol->kind==Kinds::variable_t && !symbol->initialized)
+      type = Types::unknown_t;
+    }
+    if(symbol->kind==Kinds::variable_t && checkId(id,true) && !symbol->initialized){
       Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
         id.c_str());
-    type = symbol->type;
+      type = Types::unknown_t;
+    }
   }else{
     Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
       id.c_str());
+    type = Types::unknown_t;
   }
 
   return new AST::Variable(id, NULL, AST::read, type);
@@ -160,12 +164,13 @@ AST::Node* SymbolTable::useArray(std::string id, AST::Node *index){
     Kinds::kindName[Kinds::array_t], id.c_str());
 
   auto symbol = getSymbol(id);
-  Types::Type type = Types::unknown_t;
+  auto type = symbol->type;
   if(symbol != nullptr){
-    if(symbol->kind != Kinds::array_t)
+    if(symbol->kind != Kinds::array_t){
       Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
         id.c_str(), Kinds::kindName[Kinds::array_t]);
-    type = symbol->type;
+      type = Types::unknown_t;
+    }
   }
   if(index == nullptr || index->type != Types::integer_t)
     Errors::print(Errors::index_wrong_type, Types::mascType[index->type]);
@@ -187,5 +192,13 @@ void SymbolTable::setArraySize(AST::Node *node, int aSize){
   while(tmp != nullptr){
     tmp->setSize(aSize);
     tmp = (AST::Array*) tmp->next;
+  }
+}
+
+void SymbolTable::checkFuncs(){
+  for(const auto& iter : _entryList){
+    const auto& symbol = iter.second;
+    if(symbol->kind == Kinds::function_t && !symbol->initialized)
+      Errors::print(Errors::func_never_declared, iter.first.c_str());
   }
 }

@@ -86,13 +86,16 @@ namespace Errors {
     "semantico: arranjo %s possui tamanho menor que o necessario.",
     "semantico: funcao %s espera %d parametros mas recebeu %d.",
     "semantico: funcao %s sem declaracao.",
-    "semantico: tipo %s nao contem parametro %s."
+    "semantico: tipo %s nao contem parametro %s.",
+    "semantico: funcao %s espera retorno %s mas recebeu %s.",
+    "semantico: funcao sem chamada de retorno."
   };
 
   enum ErrorType {unknown_symbol, without_declaration, not_initialized,
     redefinition, wrong_use, op_wrong_type1, op_wrong_type2, index_wrong_type,
     array_index_lst_1, func_never_declared, param_wrong_type, array_size_lst_needed,
-    array_wrong_amount, func_without_declaration, type_wrong_param};
+    array_wrong_amount, func_without_declaration, type_wrong_param, wrong_return_type,
+    func_without_return};
 
   void print(ErrorType error, ...);
 }

@@ -28,8 +28,31 @@ bool Function::equals(Variable *var, bool checkNext/*=false*/){
   return ret && (params1!=nullptr?params1->equals(params2, true):params2==nullptr);
 }
 
-Return::Return(Node *expr, Types::Type funcType) :expr(expr) {
-  //checar tipo da funcao com o da expressao
+
+Function::Function(std::string id, Node *params, Node *block, Use use,
+  Types::Type type/*=Types::unknown_t*/):
+  params(params), block(block), Variable(id,nullptr,use,type){
+
+  if(block != nullptr){
+    //check returns
+    bool foundReturn = false;
+    Block *b = (Block*)block;
+    Return *r = nullptr;
+    for(Node *line : b->lines){
+      if(line->getNodeType() == return_nt){
+        r = (Return*)line;
+        r->funcType = type;//gambiarra para coerção
+        if(r->type!=type && !(type==Types::real_t && r->type==Types::integer_t))
+          Errors::print(Errors::wrong_return_type, id.c_str(),
+            Types::mascType[type], Types::mascType[line->type]);
+
+        foundReturn = true;
+      }
+    }
+
+    if(!foundReturn)
+      Errors::print(Errors::func_without_return);
+  }
 }
 
 Array::Array(std::string id, Node *next, Node *i,
@@ -214,13 +237,13 @@ void Function::printTree(){
     case declr:
       std::cout << "Declaracao de funcao " << Types::femType[type] <<
         ": " << id << "\n+parametros:\n";
-      params->printTree();
+      if(params!=nullptr)params->printTree();
       std::cout << "Fim declaracao";
       break;
     case def:
       std::cout << "Definicao de funcao " << Types::femType[type] <<
         ": " << id << "\n+parametros:\n";
-      params->printTree();
+      if(params!=nullptr)params->printTree();
       std::cout << "+corpo:\n";
       block->printTree();
       std::cout << "Fim definicao";
@@ -232,6 +255,8 @@ void Function::printTree(){
 void Return::printTree(){
   std::cout << "Retorno de funcao: ";
   expr->printTree();
+  if(funcType==Types::real_t && type==Types::integer_t)
+    std::cout << " para real";
 }
 
 void Block::printTree(){
