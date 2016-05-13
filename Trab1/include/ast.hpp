@@ -8,7 +8,7 @@
 
 namespace AST {
 
-enum Use { attr, declr, read, param };
+enum Use { attr, declr, def, read, param };
 
 class Node;
 
@@ -49,7 +49,10 @@ class Variable : public Node {
       Types::Type type=Types::unknown_t):
       id(id), next(next), use(use), Node(type){}
     void printTree();
+
     void setType(Types::Type t){type=t;}
+    virtual Kinds::Kind getKind(){return Kinds::variable_t;}
+    virtual bool equals(Variable *var, bool checkNext=false);
 
     std::string id;
     Node *next;
@@ -70,9 +73,11 @@ class Array : public Variable {
 
     Array(std::string id, Node *next, Node *i,
       Use use, int aSize, Types::Type type);
-
     void printTree();
+
     void setSize(int n);
+    Kinds::Kind getKind(){return Kinds::array_t;}
+    bool equals(Variable *var, bool checkNext=false);
 
     Node *index;
     int size=0;
@@ -82,12 +87,24 @@ class Function : public Variable {
   public:
     Function(std::string id, Node *params, Node *block, Use use,
       Types::Type type=Types::unknown_t):
-      params(params), block(block), Variable(id,nullptr,use,type){}
-
+      params(params), block(block), Variable(id,nullptr,use,type){}//check return
     void printTree();
+
+    Kinds::Kind getKind(){return Kinds::function_t;}
+    bool equals(Variable *var, bool checkNext=false);
 
     Node *params;
     Node *block;
+};
+
+class Return : public Node {
+  public:
+    Return(Node *expr):expr(expr){}
+    Return(Node *expr, Types::Type funcType);
+
+    void printTree();
+
+    Node *expr;
 };
 
 class BinOp : public Node {

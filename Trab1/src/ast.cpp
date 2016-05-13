@@ -2,6 +2,36 @@
 
 using namespace AST;
 
+bool Variable::equals(Variable *var, bool checkNext/*=false*/){
+  if(var == nullptr || var->getKind() != this->getKind())
+    return false;
+
+  auto next1 = (Variable*)next;
+  auto next2 = (Variable*)var->next;
+  return this->id==var->id && this->type==var->type &&
+    (checkNext ? (next1!=nullptr?next1->equals(next2):next2==nullptr) : true);
+}
+
+bool Array::equals(Variable *var, bool checkNext/*=false*/){
+  bool ret = Variable::equals(var, checkNext);
+
+  auto ar = dynamic_cast<Array*>(var);
+  return ret && this->size==ar->size;
+}
+
+bool Function::equals(Variable *var, bool checkNext/*=false*/){
+  bool ret = Variable::equals(var, checkNext);
+
+  auto func = dynamic_cast<Function*>(var);
+  auto params1 = (Variable*)params;
+  auto params2 = (Variable*)func->params;
+  return ret && (params1!=nullptr?params1->equals(params2, true):params2==nullptr);
+}
+
+Return::Return(Node *expr, Types::Type funcType) :expr(expr) {
+  //checar tipo da funcao com o da expressao
+}
+
 Array::Array(std::string id, Node *next, Node *i,
   Use use, int aSize, Types::Type type):
   Variable(id,next,use,type){
@@ -187,8 +217,21 @@ void Function::printTree(){
       params->printTree();
       std::cout << "Fim declaracao";
       break;
+    case def:
+      std::cout << "Definicao de funcao " << Types::femType[type] <<
+        ": " << id << "\n+parametros:\n";
+      params->printTree();
+      std::cout << "+corpo:\n";
+      block->printTree();
+      std::cout << "Fim definicao";
+      break;
     default: break;
   }
+}
+
+void Return::printTree(){
+  std::cout << "Retorno de funcao: ";
+  expr->printTree();
 }
 
 void Block::printTree(){

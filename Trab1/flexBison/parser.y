@@ -6,25 +6,29 @@
 AST::Block *programRoot; /* the root node of our program AST:: */
 ST::SymbolTable *symtab = new ST::SymbolTable(NULL);  /* main symbol table */
 
+std::string lastID = "";
+AST::Node *lastFuncParams = nullptr;
+
 extern int yylex();
 extern void yyerror(const char* s, ...);
 
 /*
   ASK:
-	decl fun int: soma(int: a, int: b);				    [vai da erro em tudo pq tem q usar o param
-                                                 salvo]
-	def fun real: soma(real: x, real: y)
-	  return x + y;
-	end def
+  	decl fun int: soma(int: a, int: b);				    [vai da erro em tudo pq tem q usar o param
+                                                   salvo]
+  	def fun real: soma(real: x, real: y)
+  	  return x + y;
+  	end def
 
-	eh obrigado a ter return na funcao?				    [sim]
-
-
-
-  int[10]: ar, b;                               [perguntar se são mesmo 3 erros]
-  ar := b;
+  	eh obrigado a ter return na funcao?				    [sim]
 
   TODO:
+    //botar tipo como desconhecido
+    //check return
+
+    testar erro 22
+    criar erro de função nao declarada
+    funções só podem ser declaradas e definidas no escopo global
 */
 %}
 
@@ -47,6 +51,7 @@ extern void yyerror(const char* s, ...);
 %type <node> varlist arraylist dparamlist
 %type <block> program lines
 %type <type> vartype
+%type <value> defid
 
 %left AND_OPT OR_OPT
 %left NOT_OPT
@@ -73,6 +78,7 @@ lines   : line { $$ = new AST::Block(symtab);
 line    : decl ';'                      {$$ = $1;}
         | assign ';'                    {$$ = $1;}
         | DEF_T FUN_T def END_T DEF_T   { $$ = $3; }
+        | RETURN_T expr ';'             { $$ = new AST::Return($2); }
         | error ';'                     { yyerrok; $$ = NULL; }
         ;
 
@@ -84,9 +90,12 @@ decl    : vartype ':' varlist { $$ = $3; symtab->setType($$, $1); }
               { $$ = symtab->declFunction($5, $7, $3); }
         ;
 
-def     : vartype ':' ID_V '(' dparamlist ')' newscope lines
+def     : vartype ':' defid '(' dparamlist ')' newscope lines
             { symtab = symtab->getPrevious();
-              $$ = NULL; }
+              $$ = symtab->defFunction($3, $5, $8, $1); }
+        ;
+
+defid   : ID_V { lastID = $1; $$ = $1; }
         ;
 
 assign  : target ASSIGN_OPT expr { $$ = new AST::BinOp($1, Ops::assign, $3); }
@@ -109,17 +118,23 @@ arraylist : ID_V                { $$ = symtab->newVariable($1, NULL, true); }
           | arraylist ',' ID_V  { $$ = symtab->newVariable($3, $1, true); }
           ;
 
-dparamlist  : vartype ':' ID_V
+dparamlist  : { $$ = NULL; lastFuncParams = nullptr; }
+            | vartype ':' ID_V
                 { $$ = new AST::Variable($3, NULL, AST::param, $1); }
             | vartype '[' INT_V ']' ':' ID_V
                 { $$ = new AST::Array($6, NULL, AST::param, std::atoi($3), $1); }
             | vartype ':' ID_V ',' dparamlist
-                { $$ = new AST::Variable($3, $5, AST::param, $1); }
+                { $$ = new AST::Variable($3, $5, AST::param, $1);
+                  lastFuncParams = $$; }
             | vartype '[' INT_V ']' ':' ID_V ',' dparamlist
-                { $$ = new AST::Array($6, $8, AST::param, std::atoi($3), $1); }
+                { $$ = new AST::Array($6, $8, AST::param, std::atoi($3), $1);
+                  lastFuncParams = $$; }
             ;
 
-newscope    : { symtab = new ST::SymbolTable(symtab); }
+newscope    : { auto symbol = symtab->getSymbol(lastID);
+                symtab = new ST::SymbolTable(symtab);
+                symtab->addFuncParams(symbol!=nullptr?symbol->params:nullptr,
+                  lastFuncParams); }
             ;
 
 expr    : term                    { $$ = $1; }

@@ -53,6 +53,50 @@ AST::Node* SymbolTable::declFunction(std::string id, AST::Node *params, Types::T
   return new AST::Function(id, params, nullptr, AST::declr, type);
 }
 
+AST::Node* SymbolTable::defFunction(std::string id, AST::Node *params,
+  AST::Node *block, Types::Type type){
+
+  auto params1 = (AST::Variable*)params;
+  auto symbol = getSymbol(id);
+  if(symbol != nullptr){
+    auto params2 = (AST::Variable*)symbol->params;
+    bool testKind = symbol->kind == Kinds::function_t;
+    bool testType = symbol->type == type;
+    bool testParams = (params2!=nullptr?params2->equals(params1, true):params1==nullptr);
+
+    if( (!testKind || !testType || !testParams) ||
+        (testKind && testType && testParams && symbol->initialized)){
+      Errors:print(Errors::redefinition, Kinds::kindName[symbol->kind],
+        id.c_str());
+      type = Types::unknown_t;
+    }else{
+      symbol->initialized = true;
+    }
+  }else{
+    Symbol *entry = new Symbol(params, type);
+    addSymbol(id, entry);
+  }
+
+  return new AST::Function(id, params, block, AST::def, type);
+}
+
+void SymbolTable::addFuncParams(AST::Node *oldParams, AST::Node *newParams){
+  AST::Variable *var;
+  if(oldParams == nullptr)
+    var = (AST::Variable*) newParams;
+  else
+    var = (AST::Variable*) oldParams;
+
+  while(var != nullptr){
+    Symbol *entry = new Symbol(var->getKind());
+    entry->type = var->type;
+    entry->initialized = true;
+    addSymbol(var->id,entry);
+
+    var = (AST::Variable*) var->next;
+  }
+}
+
 AST::Node* SymbolTable::assignVariable(std::string id){
   if ( ! checkId(id) ) Errors::print(Errors::without_declaration,
     Kinds::kindName[Kinds::variable_t], id.c_str());
@@ -96,7 +140,7 @@ AST::Node* SymbolTable::useVariable(std::string id){
   auto symbol = getSymbol(id);
   auto type = Types::unknown_t;
   if ( symbol != nullptr ){
-    if(symbol->kind != Kinds::variable_t)
+    if(symbol->kind != Kinds::variable_t)//botar tipo como desconhecido
       Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
         id.c_str(), Kinds::kindName[Kinds::variable_t]);
     if(symbol->kind==Kinds::variable_t && !symbol->initialized)

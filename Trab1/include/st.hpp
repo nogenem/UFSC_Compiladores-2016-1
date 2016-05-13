@@ -34,6 +34,9 @@ class SymbolTable {
     void addSymbol(std::string id, Symbol *newsymbol);
     AST::Node* newVariable(std::string id, AST::Node* next, bool isArray);
     AST::Node* declFunction(std::string id, AST::Node *params, Types::Type type);
+    AST::Node* defFunction(std::string id, AST::Node *params, AST::Node *block,
+      Types::Type type);
+    void addFuncParams(AST::Node *oldParams, AST::Node *newParams);
     AST::Node* assignVariable(std::string id);
     AST::Node* assignArray(std::string id, AST::Node *index);
     AST::Node* useVariable(std::string id);
