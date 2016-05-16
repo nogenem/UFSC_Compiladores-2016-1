@@ -10,7 +10,7 @@ namespace AST {
 
 enum Use { attr, declr, def, read, param };
 enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
-  function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt };
+  function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt, whileexpr_nt };
 
 class Node;
 
@@ -136,6 +136,16 @@ class CondExpr : public Node {
     NodeType getNodeType(){return condexpr_nt;}
 
     Node *cond, *thenBranch, *elseBranch;
+};
+
+class WhileExpr : public Node {
+  public:
+    WhileExpr(Node *cond, Node *block);
+
+    void printTree();
+    NodeType getNodeType(){return whileexpr_nt;}
+
+    Node *cond, *block;
 };
 
 class BinOp : public Node {

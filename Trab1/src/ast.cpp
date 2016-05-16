@@ -32,6 +32,15 @@ CondExpr::CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
   cond(cond), thenBranch(thenBranch), elseBranch(elseBranch){
 
   if(cond->type != Types::bool_t){
+    Errors::print(Errors::op_wrong_type1, "enquanto",
+        Types::mascType[Types::bool_t], Types::mascType[cond->type]);
+  }
+}
+
+WhileExpr::WhileExpr(Node *cond, Node *block):
+  cond(cond), block(block){
+
+  if(cond->type != Types::bool_t){
     Errors::print(Errors::op_wrong_type1, "teste",
         Types::mascType[Types::bool_t], Types::mascType[cond->type]);
   }
@@ -379,4 +388,12 @@ void CondExpr::printTree(){
     elseBranch->printTree();
   }
   std::cout << "Fim expressao condicional";
+}
+
+void WhileExpr::printTree(){
+  std::cout << "Laco\n+enquanto: ";
+  cond->printTree();
+  std::cout << "\n+faca:\n";
+  block->printTree();
+  std::cout << "Fim laco";
 }

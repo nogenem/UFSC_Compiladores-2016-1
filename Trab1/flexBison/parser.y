@@ -15,10 +15,10 @@ extern void yyerror(const char* s, ...);
 
 /*
   ASK:
-    tratar os warning [problema ta no 'cond' e 'def']
-  TODO:
-    arrumar problema test((v)+2);
 
+  TODO:
+    tratar os warning [problema ta no 'cond' e 'def']
+    arrumar problema test((v)+2);
 */
 %}
 
@@ -34,11 +34,11 @@ extern void yyerror(const char* s, ...);
 %token<value> INT_V REAL_V BOOL_V ID_V
 %token<type> INT_T REAL_T BOOL_T
 %token RETURN_T DEF_T END_T DECL_T FUN_T ASSIGN_OPT
-%token IF_T THEN_T ELSE_T
+%token IF_T THEN_T ELSE_T WHILE_T DO_T
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %token AND_OPT OR_OPT NOT_OPT
 
-%type <node> line fline decl def assign target expr term cond
+%type <node> line fline decl def assign target expr term cond enqt
 %type <node> varlist arraylist dparamlist uparamlist fdecl
 %type <block> program lines flines
 %type <type> vartype
@@ -76,18 +76,22 @@ line    : decl ';'                { $$ = $1; }
         | assign ';'              { $$ = $1; }
         | DEF_T def DEF_T         { $$ = $2; }
         | IF_T cond IF_T          { $$ = $2; }
+        | WHILE_T enqt WHILE_T    { $$ = $2; }
         | RETURN_T expr ';'       { $$ = new AST::Return($2); }
         | error ';'               { yyerrok; $$ = NULL; }
         | IF_T error IF_T         { yyerrok; $$ = NULL; }
+        | WHILE_T error WHILE_T   { yyerrok; $$ = NULL; }
         | DEF_T error DEF_T       { yyerrok; $$ = NULL; }
         ;
 
-fline   : decl ';'          { $$ = $1; }
-        | assign ';'        { $$ = $1; }
-        | IF_T cond IF_T    { $$ = $2; }
-        | RETURN_T expr ';' { $$ = new AST::Return($2); }
-        | error ';'         { yyerrok; $$ = NULL; }
-        | IF_T error IF_T   { yyerrok; $$ = NULL; }
+fline   : decl ';'                { $$ = $1; }
+        | assign ';'              { $$ = $1; }
+        | IF_T cond IF_T          { $$ = $2; }
+        | WHILE_T enqt WHILE_T    { $$ = $2; }
+        | RETURN_T expr ';'       { $$ = new AST::Return($2); }
+        | error ';'               { yyerrok; $$ = NULL; }
+        | IF_T error IF_T         { yyerrok; $$ = NULL; }
+        | WHILE_T error WHILE_T   { yyerrok; $$ = NULL; }
         ;
 
 decl    : vartype ':' varlist
@@ -125,7 +129,15 @@ cond    : expr THEN_T newscope flines END_T
             { yyerrok; $$ = NULL; }
         ;
 
+enqt    : expr DO_T newscope flines END_T
+            { $$ = new AST::WhileExpr($1, $4); }
+        | expr DO_T error END_T
+            { yyerrok; $$ = NULL; }
+        ;
+
 expr    : term                    { $$ = $1; }
+        | expr '+' expr           { $$ = new AST::BinOp($1, Ops::plus, $3); }
+        | expr '-' expr           { $$ = new AST::BinOp($1, Ops::b_minus, $3); }
     		| expr '*' expr           { $$ = new AST::BinOp($1, Ops::times, $3); }
     		| expr '/' expr           { $$ = new AST::BinOp($1, Ops::division, $3); }
     		| expr AND_OPT expr       { $$ = new AST::BinOp($1, Ops::b_and, $3); }
