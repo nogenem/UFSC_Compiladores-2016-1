@@ -72,30 +72,30 @@ namespace Kinds {
 namespace Errors {
 
   const std::vector<const char*> messages = {
-    "lexico: simbolo desconhecido: %c.",
-    "semantico: %s %s sem declaracao.",//arranjo/variavel/funcao/tipo x
-    "semantico: %s %s nao inicializada.",
-    "semantico: %s %s sofrendo redefinicao.",
-    "semantico: %s %s com uso como %s.",//variavel x arranjo/...
-    "semantico: operacao %s espera %s mas recebeu %s.",
-    "semantico: operacao %s espera inteiro ou real mas recebeu %s.",
-    "semantico: indice de tipo %s.",
-    "semantico: arranjo %s com tamanho menor que um.",
-    "semantico: funcao %s declarada mas nunca definida.",
-    "semantico: parametro espera %s mas recebeu %s.",
-    "semantico: arranjo %s possui tamanho menor que o necessario.",
-    "semantico: funcao %s espera %d parametros mas recebeu %d.",
-    "semantico: funcao %s sem declaracao.",
-    "semantico: tipo %s nao contem parametro %s.",
-    "semantico: funcao %s espera retorno %s mas recebeu %s.",
-    "semantico: funcao sem chamada de retorno."
+    "lexico: simbolo desconhecido: %c.",//unknown_symbol
+    "semantico: %s %s sem declaracao.",//without_declaration
+    "semantico: %s %s nao inicializada.",//not_initialized
+    "semantico: %s %s sofrendo redefinicao.",//redefinition
+    "semantico: %s %s com uso como %s.",//wrong_use
+    "semantico: operacao %s espera %s mas recebeu %s.",//op_wrong_type1
+    "semantico: operacao %s espera inteiro ou real mas recebeu %s.",//op_wrong_type2
+    "semantico: indice de tipo %s.",//index_wrong_type
+    "semantico: arranjo %s com tamanho menor que um.",//array_index_lst_1
+    "semantico: funcao %s declarada mas nunca definida.",//func_never_declared
+    "semantico: parametro espera %s mas recebeu %s.",//param_wrong_type
+    "semantico: arranjo %s possui tamanho menor que o necessario.",//array_size_lst_needed
+    "semantico: funcao %s espera %d parametros mas recebeu %d.",//func_wrong_param_amount
+    "semantico: tipo %s nao contem parametro %s.",//type_wrong_param
+    "semantico: funcao sem chamada de retorno.",//func_without_return
+    "semantico: funcao %s sofrendo redeclaracao.",//func_redeclaration
+    "semantico: uso de variavel ou valor como arranjo."//param_value_as_array
   };
 
   enum ErrorType {unknown_symbol, without_declaration, not_initialized,
     redefinition, wrong_use, op_wrong_type1, op_wrong_type2, index_wrong_type,
     array_index_lst_1, func_never_declared, param_wrong_type, array_size_lst_needed,
-    array_wrong_amount, func_without_declaration, type_wrong_param, wrong_return_type,
-    func_without_return};
+    func_wrong_param_amount, type_wrong_param,
+    func_without_return, func_redeclaration, param_value_as_array};
 
   void print(ErrorType error, ...);
 }

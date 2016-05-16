@@ -18,12 +18,18 @@ typedef std::vector<Node*> NodeList; //List of ASTs
 
 class Node {
   public:
-    Node(){}
-    Node(Types::Type type): type(type){}
+    Node():
+      next(nullptr),type(Types::unknown_t){}
+    Node(Types::Type type):
+      next(nullptr),type(type){}
+    Node(Node *next, Types::Type type):
+      next(next),type(type){}
+
     virtual ~Node() {}
     virtual void printTree(){}
     virtual NodeType getNodeType(){return node_nt;}
 
+    Node *next;
     Types::Type type;
 };
 
@@ -31,6 +37,7 @@ class Block : public Node{
   public:
     Block(ST::SymbolTable *symtab):
       symtab(symtab){}
+
     void printTree();
     NodeType getNodeType(){return block_nt;}
 
@@ -42,6 +49,7 @@ class Value : public Node {
   public:
     Value(std::string n, Types::Type type):
       n(n), Node(type){}
+
     void printTree();
     NodeType getNodeType(){return value_nt;}
 
@@ -52,7 +60,8 @@ class Variable : public Node {
   public:
     Variable(std::string id, Node *next, Use use,
       Types::Type type=Types::unknown_t):
-      id(id), next(next), use(use), Node(type){}
+      id(id), use(use), Node(next,type){}
+
     void printTree();
     virtual NodeType getNodeType(){return variable_nt;}
 
@@ -61,7 +70,6 @@ class Variable : public Node {
     virtual bool equals(Variable *var, bool checkNext=false);
 
     std::string id;
-    Node *next;
     Use use;
 };
 
@@ -79,6 +87,7 @@ class Array : public Variable {
 
     Array(std::string id, Node *next, Node *i,
       Use use, int aSize, Types::Type type);
+
     void printTree();
     NodeType getNodeType(){return array_nt;}
 
@@ -94,6 +103,7 @@ class Function : public Variable {
   public:
     Function(std::string id, Node *params, Node *block, Use use,
       Types::Type type=Types::unknown_t);
+
     void printTree();
     NodeType getNodeType(){return function_nt;}
 
@@ -106,7 +116,8 @@ class Function : public Variable {
 
 class Return : public Node {
   public:
-    Return(Node *expr):expr(expr), Node(expr->type){}
+    Return(Node *expr):
+      expr(expr),Node(expr->type){}
 
     void printTree();
     NodeType getNodeType(){return return_nt;}

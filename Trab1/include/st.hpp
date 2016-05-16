@@ -23,6 +23,7 @@ class Symbol {
     Types::Type type;
     bool initialized;//initialized/defined?
     AST::Node *params;
+    int aSize;//array size
 };
 
 class SymbolTable {
@@ -39,8 +40,9 @@ class SymbolTable {
     void addFuncParams(AST::Node *oldParams, AST::Node *newParams);
     AST::Node* assignVariable(std::string id);
     AST::Node* assignArray(std::string id, AST::Node *index);
-    AST::Node* useVariable(std::string id);
+    AST::Node* useVariable(std::string id,bool useOfFunc);
     AST::Node* useArray(std::string id, AST::Node *index);
+    AST::Node* useFunc(std::string id, AST::Node *params);
     void setType(AST::Node *node, Types::Type type);
     void setArraySize(AST::Node *node, int aSize);
     void checkFuncs();

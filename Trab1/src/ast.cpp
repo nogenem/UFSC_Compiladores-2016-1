@@ -43,7 +43,7 @@ Function::Function(std::string id, Node *params, Node *block, Use use,
         r = (Return*)line;
         r->funcType = type;//gambiarra para coerção
         if(r->type!=type && !(type==Types::real_t && r->type==Types::integer_t))
-          Errors::print(Errors::wrong_return_type, id.c_str(),
+          Errors::print(Errors::op_wrong_type1, "retorno",
             Types::mascType[type], Types::mascType[line->type]);
 
         foundReturn = true;
@@ -77,6 +77,25 @@ void Array::setSize(int n){
 
 BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
   left(left), op(op), right(right){
+
+  if(op != Ops::assign){
+    if(left->getNodeType() == array_nt){
+      auto tmp = dynamic_cast<Array*>(left);
+      if(tmp->index == nullptr){
+        left->type = Types::unknown_t;
+        Errors::print(Errors::wrong_use, Kinds::kindName[Kinds::array_t],
+          tmp->id.c_str(), Kinds::kindName[Kinds::variable_t]);
+      }
+    }
+    if(right->getNodeType() == array_nt){
+      auto tmp = dynamic_cast<Array*>(right);
+      if(tmp->index == nullptr){
+        right->type = Types::unknown_t;
+        Errors::print(Errors::wrong_use, Kinds::kindName[Kinds::array_t],
+          tmp->id.c_str(), Kinds::kindName[Kinds::variable_t]);
+      }
+    }
+  }
 
   auto l = left->type;
   auto ltxt = Types::mascType[l];
@@ -137,6 +156,17 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
 
 UniOp::UniOp(Ops::Operation op, Node *right):
   op(op), right(right) {
+
+  if(op != Ops::u_paren){
+    if(right->getNodeType() == array_nt){
+      auto tmp = dynamic_cast<Array*>(right);
+      if(tmp->index == nullptr){
+        right->type = Types::unknown_t;
+        Errors::print(Errors::wrong_use, Kinds::kindName[Kinds::array_t],
+          tmp->id.c_str(), Kinds::kindName[Kinds::variable_t]);
+      }
+    }
+  }
 
   auto r = right->type;
   auto rtxt = Types::mascType[r];
@@ -199,7 +229,7 @@ void Variable::printTree(){
 
 void Array::printTree(){
   if(use == param){
-    std::cout << "parametro " << Types::mascType[type] << " de tamanho " <<
+    std::cout << "parametro arranjo " << Types::mascType[type] << " de tamanho " <<
       size << ": " << id << "\n";
     if(next != NULL) next->printTree();
   }else{
@@ -219,10 +249,12 @@ void Array::printTree(){
           std::cout << "\n+valor";
           break;
         case read:
-          std::cout << "arranjo " << Types::mascType[type] << " " << id <<
-            " {+indice: ";
-          index->printTree();
-          std::cout << "}";
+          std::cout << "arranjo " << Types::mascType[type] << " " << id;
+          if(index != nullptr){
+            std::cout << " {+indice: ";
+            index->printTree();
+            std::cout << "}";
+          }
           break;
         default: break;
       }
@@ -234,13 +266,13 @@ void Array::printTree(){
 
 void Function::printTree(){
   switch (use) {
-    case declr:
+    case declr:{
       std::cout << "Declaracao de funcao " << Types::femType[type] <<
         ": " << id << "\n+parametros:\n";
       if(params!=nullptr)params->printTree();
       std::cout << "Fim declaracao";
       break;
-    case def:
+    }case def:{
       std::cout << "Definicao de funcao " << Types::femType[type] <<
         ": " << id << "\n+parametros:\n";
       if(params!=nullptr)params->printTree();
@@ -248,7 +280,21 @@ void Function::printTree(){
       block->printTree();
       std::cout << "Fim definicao";
       break;
-    default: break;
+    }case read:{
+      std::cout << "chamada de funcao " << Types::femType[type] <<
+        " " << id.c_str() << " {+parametros: ";
+
+      Node *tmp = params;
+      while(tmp != nullptr){
+        tmp->printTree();
+        if(tmp->next != nullptr)
+          std::cout << ", ";
+
+        tmp = tmp->next;
+      }
+      std::cout << "}";
+      break;
+    }default: break;
   }
 }
 

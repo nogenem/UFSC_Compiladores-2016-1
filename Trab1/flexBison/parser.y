@@ -8,6 +8,7 @@ ST::SymbolTable *symtab = new ST::SymbolTable(NULL);  /* main symbol table */
 
 std::string lastID = "";
 AST::Node *lastFuncParams = nullptr;
+bool useOfFunc = false;
 
 extern int yylex();
 extern void yyerror(const char* s, ...);
@@ -16,6 +17,8 @@ extern void yyerror(const char* s, ...);
   ASK:
 
   TODO:
+    arrumar problema test((v)+2);
+
 */
 %}
 
@@ -35,7 +38,7 @@ extern void yyerror(const char* s, ...);
 %token AND_OPT OR_OPT NOT_OPT
 
 %type <node> line fline decl def assign target expr term
-%type <node> varlist arraylist dparamlist
+%type <node> varlist arraylist dparamlist uparamlist
 %type <block> program lines flines
 %type <type> vartype
 %type <value> defid
@@ -118,15 +121,25 @@ arraylist : ID_V                { $$ = symtab->newVariable($1, NULL, true); }
 
 dparamlist  : { $$ = NULL; lastFuncParams = nullptr; }
             | vartype ':' ID_V
-                { $$ = new AST::Variable($3, NULL, AST::param, $1); }
+                { $$ = new AST::Variable($3, NULL, AST::param, $1);
+                  lastFuncParams = $$; }
             | vartype '[' INT_V ']' ':' ID_V
-                { $$ = new AST::Array($6, NULL, AST::param, std::atoi($3), $1); }
+                { $$ = new AST::Array($6, NULL, AST::param, std::atoi($3), $1);
+                  lastFuncParams = $$; }
             | vartype ':' ID_V ',' dparamlist
                 { $$ = new AST::Variable($3, $5, AST::param, $1);
                   lastFuncParams = $$; }
             | vartype '[' INT_V ']' ':' ID_V ',' dparamlist
                 { $$ = new AST::Array($6, $8, AST::param, std::atoi($3), $1);
                   lastFuncParams = $$; }
+            ;
+
+useoffunc   : {useOfFunc=true;}
+            ;
+
+uparamlist  :                     { $$ = NULL; }
+            | expr                { $$ = $1; }
+            | expr ',' uparamlist { $$ = $1; $$->next = $3; }
             ;
 
 newscope    : { auto symbol = symtab->getSymbol(lastID);
@@ -153,10 +166,11 @@ expr    : term                    { $$ = $1; }
         | '(' expr ')'            { $$ = new AST::UniOp(Ops::u_paren, $2); }
         ;
 
-term    : BOOL_V              { $$ = new AST::Value($1, Types::bool_t); }
-        | INT_V               { $$ = new AST::Value($1, Types::integer_t); }
-        | REAL_V              { $$ = new AST::Value($1, Types::real_t); }
-        | ID_V                { $$ = symtab->useVariable($1); }
-        | ID_V '[' expr ']'   { $$ = symtab->useArray($1, $3); }
+term    : BOOL_V                  { $$ = new AST::Value($1, Types::bool_t); }
+        | INT_V                   { $$ = new AST::Value($1, Types::integer_t); }
+        | REAL_V                  { $$ = new AST::Value($1, Types::real_t); }
+        | ID_V                    { $$ = symtab->useVariable($1,useOfFunc); }
+        | ID_V '[' expr ']'       { $$ = symtab->useArray($1, $3); }
+        | ID_V '(' useoffunc uparamlist ')' { $$ = symtab->useFunc($1, $4); useOfFunc=false; }
         ;
 %%

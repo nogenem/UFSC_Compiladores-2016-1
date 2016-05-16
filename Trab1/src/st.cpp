@@ -43,9 +43,7 @@ AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next, bool isArra
 
 AST::Node* SymbolTable::declFunction(std::string id, AST::Node *params, Types::Type type){
   if ( checkId(id, true) ){
-    auto symbol = getSymbol(id);
-    Errors::print(Errors::redefinition,
-      Kinds::kindName[symbol->kind], id.c_str());
+    Errors::print(Errors::func_redeclaration, id.c_str());
   }else {
     Symbol *entry = new Symbol(params, type);
     addSymbol(id, entry);
@@ -74,6 +72,7 @@ AST::Node* SymbolTable::defFunction(std::string id, AST::Node *params,
     }
   }else{
     Symbol *entry = new Symbol(params, type);
+    entry->initialized = true;
     addSymbol(id, entry);
   }
 
@@ -81,7 +80,7 @@ AST::Node* SymbolTable::defFunction(std::string id, AST::Node *params,
 }
 
 void SymbolTable::addFuncParams(AST::Node *oldParams, AST::Node *newParams){
-  AST::Variable *var;
+  AST::Variable *var = nullptr;
   if(oldParams == nullptr)
     var = (AST::Variable*) newParams;
   else
@@ -133,30 +132,30 @@ AST::Node* SymbolTable::assignArray(std::string id, AST::Node *index){
   return new AST::Array(id, index, AST::attr, type);
 }
 
-AST::Node* SymbolTable::useVariable(std::string id){
+AST::Node* SymbolTable::useVariable(std::string id, bool useOfFunc){
   if ( ! checkId(id) ) Errors::print(Errors::without_declaration,
     Kinds::kindName[Kinds::variable_t], id.c_str());
 
   auto symbol = getSymbol(id);
-  auto type = symbol->type;
+  auto type = Types::unknown_t;
   if ( symbol != nullptr ){
-    if(symbol->kind != Kinds::variable_t){
+    type = symbol->type;
+    if(!useOfFunc && symbol->kind != Kinds::variable_t){
       Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
         id.c_str(), Kinds::kindName[Kinds::variable_t]);
       type = Types::unknown_t;
-    }
-    if(symbol->kind==Kinds::variable_t && checkId(id,true) && !symbol->initialized){
+    }else if(!useOfFunc && checkId(id,true) && !symbol->initialized){
       Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
         id.c_str());
-      type = Types::unknown_t;
     }
   }else{
     Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
       id.c_str());
-    type = Types::unknown_t;
   }
-
-  return new AST::Variable(id, NULL, AST::read, type);
+  if(useOfFunc && symbol != nullptr && symbol->kind == Kinds::array_t)
+    return new AST::Array(id,nullptr,AST::read,symbol->aSize,type);
+  else
+    return new AST::Variable(id, NULL, AST::read, type);
 }
 
 AST::Node* SymbolTable::useArray(std::string id, AST::Node *index){
@@ -164,18 +163,90 @@ AST::Node* SymbolTable::useArray(std::string id, AST::Node *index){
     Kinds::kindName[Kinds::array_t], id.c_str());
 
   auto symbol = getSymbol(id);
-  auto type = symbol->type;
+  auto type = Types::unknown_t;
+  int size = 0;
   if(symbol != nullptr){
-    if(symbol->kind != Kinds::array_t){
+    if(symbol->kind != Kinds::array_t)
       Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
         id.c_str(), Kinds::kindName[Kinds::array_t]);
-      type = Types::unknown_t;
+    else{
+      type = symbol->type;
+      size = symbol->aSize;
     }
   }
   if(index == nullptr || index->type != Types::integer_t)
     Errors::print(Errors::index_wrong_type, Types::mascType[index->type]);
 
-  return new AST::Array(id, index, AST::read, type);
+  return new AST::Array(id, nullptr, index, AST::read, size, type);
+}
+
+AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
+  // função não declarada (deve retornar nó com 0 parametros) [25]
+  if(!checkId(id)) Errors::print(Errors::without_declaration,
+      Kinds::kindName[Kinds::function_t], id.c_str());
+
+  int nd = 0, nu = 0;//n declared, n used
+  auto symbol = getSymbol(id);
+  auto type = Types::unknown_t;
+  auto uparams = params;
+  bool defined = true;
+  if(symbol != nullptr){
+    // uso errado [18]
+    if(symbol->kind != Kinds::function_t)
+      Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
+        id.c_str(), Kinds::kindName[Kinds::function_t]);
+    else
+      type = symbol->type;
+
+    auto dparams = symbol->params;
+    while(uparams != nullptr){
+      if(dparams != nullptr){
+        // param de tipo imcompativel [15]
+        if(uparams->type != dparams->type)
+          Errors::print(Errors::param_wrong_type,Types::mascType[dparams->type],
+            Types::mascType[uparams->type]);
+        if(dparams->getNodeType()  == AST::array_nt){
+          auto uparams2 = uparams;
+          if(uparams->getNodeType() == AST::uniop_nt){
+            auto tmp = dynamic_cast<AST::UniOp*>(uparams);
+            while(tmp!=nullptr && tmp->op == Ops::u_paren){
+              if(tmp->right->getNodeType() == AST::uniop_nt)
+                tmp = dynamic_cast<AST::UniOp*>(tmp->right);
+              else{
+                uparams2 = tmp->right;
+                tmp = nullptr;
+              }
+            }
+          }
+          if(uparams2->getNodeType() != AST::array_nt)
+            Errors::print(Errors::param_value_as_array);
+          else{
+            // tamanho do arranjo tem q ser maior ou igual ao do param [16]
+            auto ar = dynamic_cast<AST::Array*>(uparams2);
+            if(ar->size < dynamic_cast<AST::Array*>(dparams)->size)
+              Errors::print(Errors::array_size_lst_needed, ar->id.c_str());
+          }
+        }
+        ++nd; dparams = dparams->next;
+      }
+      ++nu; uparams = uparams->next;
+    }
+    while(dparams != nullptr){
+      ++nd; dparams = dparams->next;
+    }
+  }else{
+    while(uparams != nullptr){
+      ++nu; uparams = uparams->next;
+    }
+    defined = false;
+  }
+
+  // numero de parametros [23]
+  if(nd != nu)
+    Errors::print(Errors::func_wrong_param_amount,
+      id.c_str(), nd, nu);
+
+  return new AST::Function(id, (defined?params:nullptr), nullptr, AST::read, type);
 }
 
 void SymbolTable::setType(AST::Node *node, Types::Type type){
@@ -191,6 +262,7 @@ void SymbolTable::setArraySize(AST::Node *node, int aSize){
   AST::Array *tmp = (AST::Array*) node;
   while(tmp != nullptr){
     tmp->setSize(aSize);
+    getSymbol(tmp->id)->aSize = aSize;
     tmp = (AST::Array*) tmp->next;
   }
 }
