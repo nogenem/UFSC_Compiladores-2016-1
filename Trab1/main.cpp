@@ -7,6 +7,7 @@ extern int yydebug;
 
 int main(int argc, char **argv)
 {
+    //yydebug = 1;
     yyparse();                  //parses whole data
     if(programRoot != NULL)
       programRoot->printTree();

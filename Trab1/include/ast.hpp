@@ -10,7 +10,7 @@ namespace AST {
 
 enum Use { attr, declr, def, read, param };
 enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
-  function_nt, return_nt, binop_nt, uniop_nt };
+  function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt };
 
 class Node;
 
@@ -37,6 +37,8 @@ class Block : public Node{
   public:
     Block(ST::SymbolTable *symtab):
       symtab(symtab){}
+
+    Block(): symtab(nullptr) {}
 
     void printTree();
     NodeType getNodeType(){return block_nt;}
@@ -124,6 +126,16 @@ class Return : public Node {
 
     Node *expr;
     Types::Type funcType=Types::unknown_t;
+};
+
+class CondExpr : public Node {
+  public:
+    CondExpr(Node *cond, Node *thenBranch, Node *elseBranch);
+
+    void printTree();
+    NodeType getNodeType(){return condexpr_nt;}
+
+    Node *cond, *thenBranch, *elseBranch;
 };
 
 class BinOp : public Node {

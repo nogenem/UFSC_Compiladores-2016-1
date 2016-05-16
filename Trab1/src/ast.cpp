@@ -28,6 +28,14 @@ bool Function::equals(Variable *var, bool checkNext/*=false*/){
   return ret && (params1!=nullptr?params1->equals(params2, true):params2==nullptr);
 }
 
+CondExpr::CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
+  cond(cond), thenBranch(thenBranch), elseBranch(elseBranch){
+
+  if(cond->type != Types::bool_t){
+    Errors::print(Errors::op_wrong_type1, "teste",
+        Types::mascType[Types::bool_t], Types::mascType[cond->type]);
+  }
+}
 
 Function::Function(std::string id, Node *params, Node *block, Use use,
   Types::Type type/*=Types::unknown_t*/):
@@ -359,4 +367,16 @@ void UniOp::printTree(){
       break;
   }
   std::cout << ")";
+}
+
+void CondExpr::printTree(){
+  std::cout << "Expressao condicional\n+se: ";
+  cond->printTree();
+  std::cout << "\n+entao: \n";
+  thenBranch->printTree();
+  if(elseBranch != nullptr){
+    std::cout << "+senao: \n";
+    elseBranch->printTree();
+  }
+  std::cout << "Fim expressao condicional";
 }

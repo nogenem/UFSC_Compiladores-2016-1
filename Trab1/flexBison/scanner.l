@@ -59,6 +59,10 @@ void yyerror(const char* s, ...);
 "fun"                           {return FUN_T;}
 "end"                           {return END_T;}
 "decl"                          {return DECL_T;}
+ /* IF */
+"if"                            {return IF_T;}
+"then"                          {return THEN_T;}
+"else"                          {return ELSE_T;}
  /* ids */
 [a-z]+                          {yylval.value = strdup(yytext); return ID_V;}
  /* any other thing */
