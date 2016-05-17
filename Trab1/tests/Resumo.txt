@@ -1,0 +1,6 @@
+* Teste da versao 1.0
+** Sucesso no teste de output da versao 1.0
+** Sucesso no teste de erro da versao 1.0
+* Teste da versao 1.1
+** Sucesso no teste de output da versao 1.1
+** Sucesso no teste de erro da versao 1.1
