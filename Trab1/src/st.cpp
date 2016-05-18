@@ -5,6 +5,9 @@ using namespace ST;
 
 bool SymbolTable::checkId(std::string id, bool creation/*=false*/){
   bool result = _entryList.find(id) != _entryList.end();
+  // Caso seja a declaração de uma variavel
+  // só é preciso checar o primeiro nivel
+  // do escopo
   if(creation)
     return result;
   return result ? result :
@@ -15,6 +18,8 @@ void SymbolTable::addSymbol(std::string id, Symbol *newsymbol){
   _entryList[id] = newsymbol;
 }
 
+/* Procura o id passado em todos os escopos e
+    retorno o simbolo deste id. */
 Symbol* SymbolTable::getSymbol(std::string id){
   bool result = _entryList.find(id) != _entryList.end();
   if(result)
@@ -62,6 +67,9 @@ AST::Node* SymbolTable::defFunction(std::string id, AST::Node *params,
     bool testType = symbol->type == type;
     bool testParams = (params2!=nullptr?params2->equals(params1, true):params1==nullptr);
 
+    // Checa redefinição da função, seja por ter alguma parte
+    // diferente ou por ter tudo igual a alguma outra função
+    // ja declarada/definida
     if( (!testKind || !testType || !testParams) ||
         (testKind && testType && testParams && symbol->initialized)){
       Errors:print(Errors::redefinition, Kinds::kindName[symbol->kind],
@@ -79,26 +87,10 @@ AST::Node* SymbolTable::defFunction(std::string id, AST::Node *params,
   return new AST::Function(id, params, block, AST::def, type);
 }
 
-void SymbolTable::addFuncParams(AST::Node *oldParams, AST::Node *newParams){
-  AST::Variable *var = nullptr;
-  if(oldParams == nullptr)
-    var = (AST::Variable*) newParams;
-  else
-    var = (AST::Variable*) oldParams;
-
-  while(var != nullptr){
-    Symbol *entry = new Symbol(var->getKind());
-    entry->type = var->type;
-    entry->initialized = true;
-    addSymbol(var->id,entry);
-
-    var = (AST::Variable*) var->next;
-  }
-}
-
 AST::Node* SymbolTable::assignVariable(std::string id){
   if ( ! checkId(id) ) Errors::print(Errors::without_declaration,
     Kinds::kindName[Kinds::variable_t], id.c_str());
+
   auto symbol = getSymbol(id);
   auto type = Types::unknown_t;
   if(symbol != nullptr){
@@ -132,6 +124,10 @@ AST::Node* SymbolTable::assignArray(std::string id, AST::Node *index){
   return new AST::Array(id, index, AST::attr, type);
 }
 
+/* 'useOfFunc' significa que a variavel esta sendo usada
+     no uso de uma função. Ex: c := soma(a, b);
+    Isto é uma gambiarra para que possa ser usado arranjos
+     como parametros de funções                             */
 AST::Node* SymbolTable::useVariable(std::string id, bool useOfFunc){
   if ( ! checkId(id) ) Errors::print(Errors::without_declaration,
     Kinds::kindName[Kinds::variable_t], id.c_str());
@@ -181,11 +177,11 @@ AST::Node* SymbolTable::useArray(std::string id, AST::Node *index){
 }
 
 AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
-  // função não declarada (deve retornar nó com 0 parametros) [25]
   if(!checkId(id)) Errors::print(Errors::without_declaration,
       Kinds::kindName[Kinds::function_t], id.c_str());
 
-  int nd = 0, nu = 0;//n declared, n used
+  //num declared params, num used params
+  int nd = 0, nu = 0;
   auto symbol = getSymbol(id);
   auto type = Types::unknown_t;
   auto uparams = params;
@@ -207,6 +203,7 @@ AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
             Types::mascType[uparams->type]);
         if(dparams->getNodeType()  == AST::array_nt){
           auto uparams2 = uparams;
+          // Gambiarra para resolver coisas como: arranjador((v));
           if(uparams->getNodeType() == AST::uniop_nt){
             auto tmp = dynamic_cast<AST::UniOp*>(uparams);
             while(tmp!=nullptr && tmp->op == Ops::u_paren){
@@ -246,9 +243,12 @@ AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
     Errors::print(Errors::func_wrong_param_amount,
       id.c_str(), nd, nu);
 
+  // função não declarada deve retornar nó com 0 parametros [25]
   return new AST::Function(id, (defined?params:nullptr), nullptr, AST::read, type);
 }
 
+/* Seta o tipo de toda a sequencia de variaveis.
+   Ex: int: a, b, c; (tipo é setado depois de criado os Nodos) */
 void SymbolTable::setType(AST::Node *node, Types::Type type){
   AST::Variable *tmp = (AST::Variable*) node;
   while(tmp != nullptr){
@@ -267,6 +267,27 @@ void SymbolTable::setArraySize(AST::Node *node, int aSize){
   }
 }
 
+/* Adiciona os parametros da declaração ou definição
+    de uma função ao escopo do corpo dela             */
+void SymbolTable::addFuncParams(AST::Node *oldParams, AST::Node *newParams){
+  AST::Variable *var = nullptr;
+  if(oldParams == nullptr)// Função ja foi declarada
+    var = (AST::Variable*) newParams;
+  else
+    var = (AST::Variable*) oldParams;
+
+  while(var != nullptr){
+    Symbol *entry = new Symbol(var->getKind());
+    entry->type = var->type;
+    entry->initialized = true;
+    addSymbol(var->id,entry);
+
+    var = (AST::Variable*) var->next;
+  }
+}
+
+/* Verifica se todas as funções declaradas
+    foram definidas                         */
 void SymbolTable::checkFuncs(){
   for(const auto& iter : _entryList){
     const auto& symbol = iter.second;

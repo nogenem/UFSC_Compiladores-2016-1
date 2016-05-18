@@ -15,15 +15,14 @@ class Symbol {
   public:
     Symbol(Kinds::Kind k): kind(k), type(Types::integer_t),
       initialized(false), params(nullptr) {}
-
     Symbol(AST::Node *params, Types::Type type): kind(Kinds::function_t), type(type),
       initialized(false), params(params) {}
 
     Kinds::Kind kind;
     Types::Type type;
-    bool initialized;//initialized/defined?
-    AST::Node *params;
-    int aSize;//array size
+    bool initialized;// Initialized/Defined?
+    AST::Node *params;// Parametros de funções
+    int aSize;// Array size
 };
 
 class SymbolTable {
@@ -33,18 +32,20 @@ class SymbolTable {
 
     bool checkId(std::string id, bool creation=false);
     void addSymbol(std::string id, Symbol *newsymbol);
+
     AST::Node* newVariable(std::string id, AST::Node* next, bool isArray);
     AST::Node* declFunction(std::string id, AST::Node *params, Types::Type type);
     AST::Node* defFunction(std::string id, AST::Node *params, AST::Node *block,
       Types::Type type);
-    void addFuncParams(AST::Node *oldParams, AST::Node *newParams);
     AST::Node* assignVariable(std::string id);
     AST::Node* assignArray(std::string id, AST::Node *index);
     AST::Node* useVariable(std::string id,bool useOfFunc);
     AST::Node* useArray(std::string id, AST::Node *index);
     AST::Node* useFunc(std::string id, AST::Node *params);
+
     void setType(AST::Node *node, Types::Type type);
     void setArraySize(AST::Node *node, int aSize);
+    void addFuncParams(AST::Node *oldParams, AST::Node *newParams);
     void checkFuncs();
 
     SymbolList& getEntryList(){return _entryList;}
@@ -52,7 +53,9 @@ class SymbolTable {
     Symbol* getSymbol(std::string id);
 
   private:
+    // Lista de simbolos
     SymbolList _entryList;
+    // 'Escopo' anterior
     SymbolTable *_previous;
 };
 

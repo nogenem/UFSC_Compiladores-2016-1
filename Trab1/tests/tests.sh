@@ -23,3 +23,4 @@ function test {
 }
 
 test > Resumo.txt
+cat Resumo.txt

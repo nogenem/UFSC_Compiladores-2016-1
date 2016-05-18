@@ -2,31 +2,7 @@
 
 using namespace AST;
 
-bool Variable::equals(Variable *var, bool checkNext/*=false*/){
-  if(var == nullptr || var->getKind() != this->getKind())
-    return false;
-
-  auto next1 = (Variable*)next;
-  auto next2 = (Variable*)var->next;
-  return this->id==var->id && this->type==var->type &&
-    (checkNext ? (next1!=nullptr?next1->equals(next2):next2==nullptr) : true);
-}
-
-bool Array::equals(Variable *var, bool checkNext/*=false*/){
-  bool ret = Variable::equals(var, checkNext);
-
-  auto ar = dynamic_cast<Array*>(var);
-  return ret && this->size==ar->size;
-}
-
-bool Function::equals(Variable *var, bool checkNext/*=false*/){
-  bool ret = Variable::equals(var, checkNext);
-
-  auto func = dynamic_cast<Function*>(var);
-  auto params1 = (Variable*)params;
-  auto params2 = (Variable*)func->params;
-  return ret && (params1!=nullptr?params1->equals(params2, true):params2==nullptr);
-}
+// Construtores
 
 CondExpr::CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
   cond(cond), thenBranch(thenBranch), elseBranch(elseBranch){
@@ -50,8 +26,10 @@ Function::Function(std::string id, Node *params, Node *block, Use use,
   Types::Type type/*=Types::unknown_t*/):
   params(params), block(block), Variable(id,nullptr,use,type){
 
+  // Verifica se tem pelo menos um return no corpo
+  // da função e verifica se o tipo do return
+  // bate com o da função
   if(block != nullptr){
-    //check returns
     bool foundReturn = false;
     Block *b = (Block*)block;
     Return *r = nullptr;
@@ -76,6 +54,8 @@ Array::Array(std::string id, Node *next, Node *i,
   Use use, int aSize, Types::Type type):
   Variable(id,next,use,type){
 
+  // Verifica se o tamanho do arranjo é
+  // maior ou igual a 1
   if(aSize < 1){
     aSize = 1;
     Errors::print(Errors::array_index_lst_1, id.c_str());
@@ -84,17 +64,12 @@ Array::Array(std::string id, Node *next, Node *i,
   index = i;
 }
 
-void Array::setSize(int n){
-  if(n < 1){
-    n = 1;
-    Errors::print(Errors::array_index_lst_1, id.c_str());
-  }
-  size = n;
-}
-
 BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
   left(left), op(op), right(right){
 
+  // verificações se o lado esquerdo ou direito
+  // da operação é um arranjo, gambiarra por causa
+  // dos parametros para uso de funções...
   if(op != Ops::assign){
     if(left->getNodeType() == array_nt){
       auto tmp = dynamic_cast<Array*>(left);
@@ -114,10 +89,15 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
     }
   }
 
+  // Tipo do lado esquerdo
   auto l = left->type;
+  // Texto do tipo do lado esquerdo
   auto ltxt = Types::mascType[l];
+  // Tipo do lado direito
   auto r = right->type;
+  // Texto do tipo do lado direito
   auto rtxt = Types::mascType[r];
+  // Texto da operação
   auto optxt = Ops::opName[op];
 
   switch (op) {
@@ -132,6 +112,7 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
     case Ops::times:
     case Ops::division:{
       type = Types::integer_t;
+      // Coerção
       if( (l==Types::real_t && r==Types::real_t) ||
           (l==Types::real_t && r==Types::integer_t) ||
           (l==Types::integer_t && r==Types::real_t)){
@@ -174,6 +155,9 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
 UniOp::UniOp(Ops::Operation op, Node *right):
   op(op), right(right) {
 
+  // verificações se o lado direito
+  // da operação é um arranjo, gambiarra por causa
+  // dos parametros para uso de funções...
   if(op != Ops::u_paren){
     if(right->getNodeType() == array_nt){
       auto tmp = dynamic_cast<Array*>(right);
@@ -185,8 +169,11 @@ UniOp::UniOp(Ops::Operation op, Node *right):
     }
   }
 
+  // Tipo do lado direito
   auto r = right->type;
+  // Texto do tipo do lado direito
   auto rtxt = Types::mascType[r];
+  // Texto da operação
   auto optxt = Ops::opName[op];
 
   switch (op) {
@@ -213,15 +200,20 @@ UniOp::UniOp(Ops::Operation op, Node *right):
   }
 }
 
+// Prints
+
 void Value::printTree(){
   std::cout << "valor " << Types::mascType[type] << " " << n;
 }
 
 void Variable::printTree(){
   if(use == param){
+    // Parametros foram pegos em ordem
     std::cout << "parametro " << Types::mascType[type] << ": " << id << "\n";
     if(next != NULL) next->printTree();
   }else{
+    // Declaração começa a pegar da ultima variavel
+    // para a primeira [int: a, b, c; => lê: c, b, a]
     if(next != NULL){
       next->printTree();
       std::cout << ", ";
@@ -246,10 +238,13 @@ void Variable::printTree(){
 
 void Array::printTree(){
   if(use == param){
+    // Parametros foram pegos em ordem
     std::cout << "parametro arranjo " << Types::mascType[type] << " de tamanho " <<
       size << ": " << id << "\n";
     if(next != NULL) next->printTree();
   }else{
+    // Declaração começa a pegar da ultima variavel
+    // para a primeira [int[10]: a, b, c; => lê: c, b, a]
     if(next != NULL){
       next->printTree();
       std::cout << ", ";
@@ -261,9 +256,9 @@ void Array::printTree(){
           break;
         case attr:
           std::cout << "Atribuicao de valor para arranjo " <<
-            Types::mascType[type]  << " " << id << ":\n+indice: ";
+            Types::mascType[type]  << " " << id << " {+indice: ";
           index->printTree();
-          std::cout << "\n+valor";
+          std::cout << "}";
           break;
         case read:
           std::cout << "arranjo " << Types::mascType[type] << " " << id;
@@ -318,6 +313,7 @@ void Function::printTree(){
 void Return::printTree(){
   std::cout << "Retorno de funcao: ";
   expr->printTree();
+  // Coerção
   if(funcType==Types::real_t && type==Types::integer_t)
     std::cout << " para real";
 }
@@ -338,12 +334,14 @@ void BinOp::printTree(){
       left->printTree();
       std::cout << ": ";
       right->printTree();
+      // Coerção
       if(l==Types::real_t && r==Types::integer_t)
         std::cout << " para real";
       break;
     default:
       std::cout << "(";
       left->printTree();
+      // Coerção
       if(r==Types::real_t && l==Types::integer_t)
         std::cout << " para real";
 
@@ -353,6 +351,7 @@ void BinOp::printTree(){
       std::cout << ") ";
 
       right->printTree();
+      // Coerção
       if(l==Types::real_t && r==Types::integer_t)
         std::cout << " para real";
       std::cout << ")";
@@ -396,4 +395,40 @@ void WhileExpr::printTree(){
   std::cout << "\n+faca:\n";
   block->printTree();
   std::cout << "Fim laco";
+}
+
+// Outras funções
+
+bool Variable::equals(Variable *var, bool checkNext/*=false*/){
+  if(var == nullptr || var->getKind() != this->getKind())
+    return false;
+
+  auto next1 = (Variable*)next;
+  auto next2 = (Variable*)var->next;
+  return this->id==var->id && this->type==var->type &&
+    (checkNext ? (next1!=nullptr?next1->equals(next2):next2==nullptr) : true);
+}
+
+bool Array::equals(Variable *var, bool checkNext/*=false*/){
+  bool ret = Variable::equals(var, checkNext);
+
+  auto ar = dynamic_cast<Array*>(var);
+  return ret && this->size==ar->size;
+}
+
+bool Function::equals(Variable *var, bool checkNext/*=false*/){
+  bool ret = Variable::equals(var, checkNext);
+
+  auto func = dynamic_cast<Function*>(var);
+  auto params1 = (Variable*)params;
+  auto params2 = (Variable*)func->params;
+  return ret && (params1!=nullptr?params1->equals(params2, true):params2==nullptr);
+}
+
+void Array::setSize(int n){
+  if(n < 1){
+    n = 1;
+    Errors::print(Errors::array_index_lst_1, id.c_str());
+  }
+  size = n;
 }

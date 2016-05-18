@@ -5,6 +5,7 @@ extern int yylineno;
 
 using namespace Errors;
 
+/* Cópia da definição do yyerror do professor */
 void Errors::print(ErrorType error, ...){
   va_list ap;
   va_start(ap, error);
