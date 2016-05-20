@@ -13,7 +13,7 @@ typedef std::map<std::string, Symbol*> SymbolList; //Set of Symbols
 
 class Symbol {
   public:
-    Symbol(Kinds::Kind k): kind(k), type(Types::integer_t),
+    Symbol(Kinds::Kind k): kind(k), type(Types::unknown_t),
       initialized(false), params(nullptr) {}
     Symbol(AST::Node *params, Types::Type type): kind(Kinds::function_t), type(type),
       initialized(false), params(params) {}

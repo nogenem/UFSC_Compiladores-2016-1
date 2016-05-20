@@ -144,9 +144,6 @@ AST::Node* SymbolTable::useVariable(std::string id, bool useOfFunc){
       Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
         id.c_str());
     }
-  }else{
-    Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
-      id.c_str());
   }
   if(useOfFunc && symbol != nullptr && symbol->kind == Kinds::array_t)
     return new AST::Array(id,nullptr,AST::read,symbol->aSize,type);
@@ -251,9 +248,13 @@ AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
    Ex: int: a, b, c; (tipo é setado depois de criado os Nodos) */
 void SymbolTable::setType(AST::Node *node, Types::Type type){
   AST::Variable *tmp = (AST::Variable*) node;
+  Symbol *tmp2 = nullptr;
   while(tmp != nullptr){
-    tmp->setType(type);
-    getSymbol(tmp->id)->type = type;
+    tmp2 = getSymbol(tmp->id);
+    if(tmp2->type == Types::unknown_t){
+      tmp->setType(type);
+      tmp2->type = type;
+    }
     tmp = (AST::Variable*) tmp->next;
   }
 }
@@ -280,6 +281,9 @@ void SymbolTable::addFuncParams(AST::Node *oldParams, AST::Node *newParams){
     Symbol *entry = new Symbol(var->getKind());
     entry->type = var->type;
     entry->initialized = true;
+    if(var->getNodeType() == AST::array_nt)
+      entry->aSize = dynamic_cast<AST::Array*>(var)->size;
+
     addSymbol(var->id,entry);
 
     var = (AST::Variable*) var->next;

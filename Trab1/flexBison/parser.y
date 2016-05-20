@@ -22,6 +22,7 @@ extern void yyerror(const char* s, ...);
   ASK:
 
   TODO:
+    TESTAR TODOS OS ERROS!!
     tratar os warning!? [problema ta no 'cond' e 'def']
     arrumar problema test((v)+2); !?
 */
@@ -218,14 +219,14 @@ vartype : INT_T   { $$ = $1; }
  *  ou uma sequencia de ids separados por ','
  */
 varlist : ID_V              { $$ = symtab->newVariable($1, NULL, false); }
-        | varlist ',' ID_V  { $$ = symtab->newVariable($3, $1, false); }
+        | ID_V ',' varlist  { $$ = symtab->newVariable($1, $3, false); }
         ;
 
 /* Uma lista de arranjos consiste de apenas um id
  *  ou uma sequencia de ids separados por ','
  */
 arraylist : ID_V                { $$ = symtab->newVariable($1, NULL, true); }
-          | arraylist ',' ID_V  { $$ = symtab->newVariable($3, $1, true); }
+          | ID_V ',' arraylist  { $$ = symtab->newVariable($1, $3, true); }
           ;
 
 /* Um 'target' pode ser apenas uma variavel ou a indexação

@@ -85,7 +85,7 @@ const std::vector<const char*> messages = {
   "semantico: operacao %s espera %s mas recebeu %s.",//op_wrong_type1
   "semantico: operacao %s espera inteiro ou real mas recebeu %s.",//op_wrong_type2
   "semantico: indice de tipo %s.",//index_wrong_type
-  "semantico: arranjo %s com tamanho menor que um.",//array_index_lst_1
+  "semantico: arranjo %s com tamanho menor do que um.",//array_index_lst_1
   "semantico: funcao %s declarada mas nunca definida.",//func_never_declared
   "semantico: parametro espera %s mas recebeu %s.",//param_wrong_type
   "semantico: arranjo %s possui tamanho menor que o necessario.",//array_size_lst_needed

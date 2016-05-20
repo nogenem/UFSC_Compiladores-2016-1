@@ -204,75 +204,82 @@ UniOp::UniOp(Ops::Operation op, Node *right):
 
 void Value::printTree(){
   std::cout << "valor " << Types::mascType[type] << " " << n;
+  if(next != nullptr){
+    std::cout << ", ";
+    next->printTree();
+  }
 }
 
 void Variable::printTree(){
-  if(use == param){
-    // Parametros foram pegos em ordem
-    std::cout << "parametro " << Types::mascType[type] << ": " << id << "\n";
-    if(next != NULL) next->printTree();
-  }else{
-    // Declaração começa a pegar da ultima variavel
-    // para a primeira [int: a, b, c; => lê: c, b, a]
-    if(next != NULL){
-      next->printTree();
-      std::cout << ", ";
-    }else{
-      switch (use) {
-        case declr:
-          std::cout << "Declaracao de variavel " << Types::femType[type] << ": ";
-          break;
-        case attr:
-          std::cout << "Atribuicao de valor para variavel " <<
-            Types::femType[type]  << " ";
-          break;
-        case read:
-          std::cout << "variavel " << Types::femType[type] << " ";
-          break;
-        default: break;
+  switch (use) {
+    case declr:{
+      std::cout << "Declaracao de variavel " << Types::femType[type] <<
+        ": " << id;
+      break;
+    }case attr:{
+      std::cout << "Atribuicao de valor para variavel " <<
+        Types::femType[type]  << " " << id;
+      break;
+    }case read:{
+      std::cout << "variavel " << Types::femType[type] << " " << id;
+      break;
+    }case param:{
+      std::cout << "Parametro " << Types::mascType[type] << ": "
+        << id << "\n";
+      break;
+    }default: break;
+  }
+  if(next != NULL){
+    if(use==declr){
+      auto tmp = dynamic_cast<Variable*>(next);
+      while(tmp != nullptr){
+        std::cout << ", " << tmp->id;
+        tmp = dynamic_cast<Variable*>(tmp->next);
       }
+    }else{
+      std::cout << (use==param?"":", ");
+      next->printTree();
     }
-    std::cout << id;
   }
 }
 
 void Array::printTree(){
-  if(use == param){
-    // Parametros foram pegos em ordem
-    std::cout << "parametro arranjo " << Types::mascType[type] << " de tamanho " <<
-      size << ": " << id << "\n";
-    if(next != NULL) next->printTree();
-  }else{
-    // Declaração começa a pegar da ultima variavel
-    // para a primeira [int[10]: a, b, c; => lê: c, b, a]
-    if(next != NULL){
-      next->printTree();
-      std::cout << ", ";
-    }else{
-      switch (use) {
-        case declr:
-          std::cout << "Declaracao de arranjo " << Types::mascType[type]
-            << " de tamanho " << size << ": ";
-          break;
-        case attr:
-          std::cout << "Atribuicao de valor para arranjo " <<
-            Types::mascType[type]  << " " << id << " {+indice: ";
-          index->printTree();
-          std::cout << "}";
-          break;
-        case read:
-          std::cout << "arranjo " << Types::mascType[type] << " " << id;
-          if(index != nullptr){
-            std::cout << " {+indice: ";
-            index->printTree();
-            std::cout << "}";
-          }
-          break;
-        default: break;
+  switch (use) {
+    case declr:{
+      std::cout << "Declaracao de arranjo " << Types::mascType[type]
+        << " de tamanho " << size << ": " << id;
+        break;
+    }case attr:{
+      std::cout << "Atribuicao de valor para arranjo " <<
+        Types::mascType[type]  << " " << id << " {+indice: ";
+      index->printTree();
+      std::cout << "}";
+      break;
+    }case read:{
+      std::cout << "arranjo " << Types::mascType[type] << " " << id;
+      if(index != nullptr){
+        std::cout << " {+indice: ";
+        index->printTree();
+        std::cout << "}";
       }
+      break;
+    }case param:{
+      std::cout << "parametro arranjo " << Types::mascType[type] << " de tamanho " <<
+        size << ": " << id << "\n";
+      break;
+    }default: break;
+  }
+  if(next != NULL){
+    if(use==declr){
+      auto tmp = dynamic_cast<Variable*>(next);
+      while(tmp != nullptr){
+        std::cout << ", " << tmp->id;
+        tmp = dynamic_cast<Variable*>(tmp->next);
+      }
+    }else{
+      std::cout << (use==param?"":", ");
+      next->printTree();
     }
-    if(use == declr)
-      std::cout << id;
   }
 }
 
@@ -296,14 +303,8 @@ void Function::printTree(){
       std::cout << "chamada de funcao " << Types::femType[type] <<
         " " << id.c_str() << " {+parametros: ";
 
-      Node *tmp = params;
-      while(tmp != nullptr){
-        tmp->printTree();
-        if(tmp->next != nullptr)
-          std::cout << ", ";
-
-        tmp = tmp->next;
-      }
+      if(params != nullptr)
+        params->printTree();
       std::cout << "}";
       break;
     }default: break;
