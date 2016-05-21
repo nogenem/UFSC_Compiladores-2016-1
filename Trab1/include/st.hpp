@@ -23,6 +23,7 @@ class Symbol {
     bool initialized;// Initialized/Defined?
     AST::Node *params;// Parametros de funções
     int aSize;// Array size
+    AST::Node *typeBlock;// Bloco de um tipo composto
 };
 
 class SymbolTable {
@@ -33,10 +34,12 @@ class SymbolTable {
     bool checkId(std::string id, bool creation=false);
     void addSymbol(std::string id, Symbol *newsymbol);
 
-    AST::Node* newVariable(std::string id, AST::Node* next, bool isArray);
+    AST::Node* newVariable(std::string id, AST::Node* next, bool isArray,
+      bool insideType=false);
     AST::Node* declFunction(std::string id, AST::Node *params, Types::Type type);
     AST::Node* defFunction(std::string id, AST::Node *params, AST::Node *block,
       Types::Type type);
+    AST::Node* defCompType(std::string id, AST::Node *block);
     AST::Node* assignVariable(std::string id);
     AST::Node* assignArray(std::string id, AST::Node *index);
     AST::Node* useVariable(std::string id,bool useOfFunc);

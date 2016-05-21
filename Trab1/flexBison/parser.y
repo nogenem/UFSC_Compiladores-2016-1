@@ -14,6 +14,9 @@ AST::Node *lastFuncParams = nullptr;
 // Gambiarra pra saber se estou começando
 //  a ler os parametros do uso de uma função
 bool useOfFunc = false;
+// Gambiarra para saber se estou dentro
+//  do bloco de um tipo composto
+bool insideType = false;
 
 extern int yylex();
 extern void yyerror(const char* s, ...);
@@ -45,7 +48,7 @@ extern void yyerror(const char* s, ...);
 %token<value> INT_V REAL_V BOOL_V ID_V
 %token<type> INT_T REAL_T BOOL_T
 %token RETURN_T DEF_T END_T DECL_T FUN_T ASSIGN_OPT
-%token IF_T THEN_T ELSE_T WHILE_T DO_T
+%token IF_T THEN_T ELSE_T WHILE_T DO_T TYPE_T
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %token AND_OPT OR_OPT NOT_OPT
 
@@ -53,9 +56,9 @@ extern void yyerror(const char* s, ...);
  * Types should match the names used in the union.
  * Example: %type<node> expr
  */
-%type <node> line fline decl def assign target expr term cond enqt
-%type <node> varlist arraylist dparamlist uparamlist fdecl
-%type <block> program lines flines
+%type <node> line fline tline decl def assign target expr term
+%type <node> varlist arraylist dparamlist uparamlist fdecl cond enqt
+%type <block> program lines flines tlines
 %type <type> vartype
 %type <value> defid
 
@@ -92,9 +95,17 @@ flines  : fline         { $$ = new AST::Block(symtab);
         | flines fline  { if($2 != NULL) $1->lines.push_back($2); }
         ;
 
+/* As linhas do corpo da definição de um tipo são compostas de
+ *  uma ou mais linhas
+ */
+tlines  : tline         { $$ = new AST::Block(symtab);
+                          if($1 != NULL) $$->lines.push_back($1); }
+        | tlines tline  { if($2 != NULL) $$->lines.push_back($2); }
+        ;
+
 /* Uma linha pode ter uma declaração de variaveis/arranjos
  *  ou uma definição/definição de função ou uma atribuição
- *  ou um IF ou um While ou um Return.
+ *  ou um IF ou um While ou um Return
  */
 line    : decl ';'                { $$ = $1; }
         | DECL_T FUN_T fdecl ';'  { $$ = $3; }
@@ -111,7 +122,7 @@ line    : decl ';'                { $$ = $1; }
 
 /* Uma linha do corpo de uma função pode ter uma declaração
  *  de variaveis/arranjos ou uma atribuição ou um IF
- *  ou um While ou um Return.
+ *  ou um While ou um Return
  */
 fline   : decl ';'                { $$ = $1; }
         | assign ';'              { $$ = $1; }
@@ -121,6 +132,13 @@ fline   : decl ';'                { $$ = $1; }
         | error ';'               { yyerrok; $$ = NULL; }
         | IF_T error IF_T         { yyerrok; $$ = NULL; }
         | WHILE_T error WHILE_T   { yyerrok; $$ = NULL; }
+        ;
+
+/* Uma linha do corpo de uma declaração de tipo só pode
+ *  ter declarações de variaveis ou arranjos
+ */
+tline   : decl ';'  { $$ = $1; }
+        | error ';' { yyerrok; $$ = NULL; }
         ;
 
 /* A declaração de variaveis contem um tipo e uma lista de variaveis
@@ -156,6 +174,10 @@ def     : FUN_T vartype ':' defid '(' dparamlist ')' fnewscope flines END_T
               $$ = symtab->defFunction($4, $6, $9, $2); }
         | FUN_T vartype ':' defid '(' dparamlist ')' END_T
             { $$ = symtab->defFunction($4, $6, new AST::Block(), $2); }
+        | TYPE_T ':' ID_V newscope insidetype tlines END_T
+            { symtab = symtab->getPrevious();
+              insideType = false;
+              $$ = symtab->defCompType($3, $6); }
         | FUN_T vartype ':' defid '(' dparamlist ')' error END_T
             { yyerrok; $$ = NULL; }
         ;
@@ -218,15 +240,15 @@ vartype : INT_T   { $$ = $1; }
 /* Uma lista de variaveis consiste de apenas um id
  *  ou uma sequencia de ids separados por ','
  */
-varlist : ID_V              { $$ = symtab->newVariable($1, NULL, false); }
-        | ID_V ',' varlist  { $$ = symtab->newVariable($1, $3, false); }
+varlist : ID_V              { $$ = symtab->newVariable($1, NULL, false, insideType); }
+        | ID_V ',' varlist  { $$ = symtab->newVariable($1, $3, false, insideType); }
         ;
 
 /* Uma lista de arranjos consiste de apenas um id
  *  ou uma sequencia de ids separados por ','
  */
-arraylist : ID_V                { $$ = symtab->newVariable($1, NULL, true); }
-          | ID_V ',' arraylist  { $$ = symtab->newVariable($1, $3, true); }
+arraylist : ID_V                { $$ = symtab->newVariable($1, NULL, true, insideType); }
+          | ID_V ',' arraylist  { $$ = symtab->newVariable($1, $3, true, insideType); }
           ;
 
 /* Um 'target' pode ser apenas uma variavel ou a indexação
@@ -301,6 +323,12 @@ term    : BOOL_V            { $$ = new AST::Value($1, Types::bool_t); }
  */
 useoffunc : { useOfFunc = true; }
           ;
+
+/* Regra extra usada para saber se estou entrando
+ *  entrando no corpo de um tipo composto
+ */
+insidetype  : { insideType = true; }
+            ;
 
 /* A lista de parametros do uso de uma função consiste de
  * NULL ou uma expressão ou uma lista de expressões

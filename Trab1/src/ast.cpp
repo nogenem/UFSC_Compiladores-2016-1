@@ -227,10 +227,14 @@ void Variable::printTree(){
       std::cout << "Parametro " << Types::mascType[type] << ": "
         << id << "\n";
       break;
+    }case comp:{
+      std::cout << "Componente " << Types::mascType[type] << ": "
+        << id;
+      break;
     }default: break;
   }
   if(next != NULL){
-    if(use==declr){
+    if(use==declr || use==comp){
       auto tmp = dynamic_cast<Variable*>(next);
       while(tmp != nullptr){
         std::cout << ", " << tmp->id;
@@ -267,10 +271,14 @@ void Array::printTree(){
       std::cout << "parametro arranjo " << Types::mascType[type] << " de tamanho " <<
         size << ": " << id << "\n";
       break;
+    }case comp:{
+      std::cout << "Componente arranjo " << Types::mascType[type] << " de tamanho " <<
+        size << ": " << id;
+      break;
     }default: break;
   }
   if(next != NULL){
-    if(use==declr){
+    if(use==declr || use==comp){
       auto tmp = dynamic_cast<Variable*>(next);
       while(tmp != nullptr){
         std::cout << ", " << tmp->id;
@@ -396,6 +404,13 @@ void WhileExpr::printTree(){
   std::cout << "\n+faca:\n";
   block->printTree();
   std::cout << "Fim laco";
+}
+
+void CompositeType::printTree(){
+  std::cout << "Definicao tipo: " << id <<
+    "\n+componentes: \n";
+  block->printTree();
+  std::cout << "Fim definicao";
 }
 
 // Outras funções

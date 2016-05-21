@@ -9,11 +9,12 @@
 namespace AST {
 
 // Possiveis usos de variaveis, arrays e funções
-enum Use { attr, declr, def, read, param };
+enum Use { attr, declr, def, read, param, comp };
 
 // Possiveis tipos de nodos
 enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
-  function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt, whileexpr_nt };
+  function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt, whileexpr_nt,
+  composite_type_nt };
 
 class Node;
 
@@ -124,6 +125,20 @@ class Function : public Variable {
     // definição e uso da função
     Node *params;
     // Corpo da função
+    Node *block;
+};
+
+class CompositeType : public Node {
+  public:
+    CompositeType(std::string id, Node *block):
+      id(id), block(block){}
+
+    void printTree();
+    NodeType getNodeType(){return composite_type_nt;}
+
+    Kinds::Kind getKind(){return Kinds::type_t;}
+
+    std::string id;
     Node *block;
 };
 

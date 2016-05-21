@@ -42,20 +42,22 @@ const std::vector<const char*> opName = {
 namespace Types {
 
 // Possiveis tipos de variaveis, arranjos e afins
-enum Type {unknown_t, integer_t, real_t, bool_t};
+enum Type {unknown_t, integer_t, real_t, bool_t, composite_t};
 
 const std::vector<const char*> mascType = {
   "desconhecido",
   "inteiro",
   "real",
-  "booleano"
+  "booleano",
+  "composto"
 };
 
 const std::vector<const char*> femType = {
   "desconhecida",
   "inteira",
   "real",
-  "booleana"
+  "booleana",
+  "composta"
 };
 
 }
@@ -63,13 +65,14 @@ const std::vector<const char*> femType = {
 namespace Kinds {
 
 // Possiveis tipos que um Nodo variavel pode ser
-enum Kind{ unknown_t, variable_t, array_t, function_t };
+enum Kind{ unknown_t, variable_t, array_t, function_t, type_t };
 
 const std::vector<const char*> kindName = {
   "desconhecido",
   "variavel",
   "arranjo",
-  "funcao"
+  "funcao",
+  "tipo"
 };
 }
 

@@ -30,7 +30,9 @@ Symbol* SymbolTable::getSymbol(std::string id){
     return nullptr;
 }
 
-AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next, bool isArray){
+AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next, bool isArray,
+  bool insideType/*=false*/){
+
   Kinds::Kind kind = isArray ? Kinds::array_t : Kinds::variable_t;
   if ( checkId(id, true) ){
     auto symbol = getSymbol(id);
@@ -41,9 +43,9 @@ AST::Node* SymbolTable::newVariable(std::string id, AST::Node* next, bool isArra
      addSymbol(id,entry); //Adds variable to symbol table
   }
   if(isArray)
-    return new AST::Array(id, next, AST::declr);
+    return new AST::Array(id, next, (insideType ? AST::comp : AST::declr));
   else
-    return new AST::Variable(id, next, AST::declr);
+    return new AST::Variable(id, next, (insideType ? AST::comp : AST::declr));
 }
 
 AST::Node* SymbolTable::declFunction(std::string id, AST::Node *params, Types::Type type){
@@ -85,6 +87,19 @@ AST::Node* SymbolTable::defFunction(std::string id, AST::Node *params,
   }
 
   return new AST::Function(id, params, block, AST::def, type);
+}
+
+AST::Node* SymbolTable::defCompType(std::string id, AST::Node *block){
+  if( checkId(id, true) ){
+    Errors::print(Errors::redefinition,
+      Kinds::kindName[Kinds::type_t], id.c_str());
+  }else{
+    Symbol *entry = new Symbol(Kinds::type_t);
+    entry->typeBlock = block;
+    addSymbol(id,entry);
+  }
+
+  return new AST::CompositeType(id, block);
 }
 
 AST::Node* SymbolTable::assignVariable(std::string id){

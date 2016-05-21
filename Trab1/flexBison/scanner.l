@@ -66,6 +66,8 @@ void yyerror(const char* s, ...);
  /* while */
 "while"                         {return WHILE_T;}
 "do"                            {return DO_T;}
+ /* Complex */
+"type"                          {return TYPE_T;}
  /* ids */
 [a-z]+                          {yylval.value = strdup(yytext); return ID_V;}
  /* any other thing */
