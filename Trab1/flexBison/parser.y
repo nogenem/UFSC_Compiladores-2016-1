@@ -150,6 +150,11 @@ decl    : vartype ':' varlist
         | vartype '[' INT_V ']' ':' arraylist
           { $$ = $6; symtab->setType($$, $1);
             symtab->setArraySize($$, std::atoi($3)); }
+        | ID_V ':' varlist
+          { $$ = $3; symtab->setCompType($$, $1); }
+        | ID_V '[' INT_V ']' ':' arraylist
+          { $$ = $6; symtab->setCompType($$, $1);
+            symtab->setArraySize($$, std::atoi($3)); }
         ;
 
 /* A declaração de funções contem um tipo, o id da função

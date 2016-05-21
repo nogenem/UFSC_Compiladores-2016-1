@@ -213,22 +213,22 @@ void Value::printTree(){
 void Variable::printTree(){
   switch (use) {
     case declr:{
-      std::cout << "Declaracao de variavel " << Types::femType[type] <<
+      std::cout << "Declaracao de variavel " << getTypeTxt(false) <<
         ": " << id;
       break;
     }case attr:{
       std::cout << "Atribuicao de valor para variavel " <<
-        Types::femType[type]  << " " << id;
+        getTypeTxt(false)   << " " << id;
       break;
     }case read:{
-      std::cout << "variavel " << Types::femType[type] << " " << id;
+      std::cout << "variavel " << getTypeTxt(false)  << " " << id;
       break;
     }case param:{
-      std::cout << "Parametro " << Types::mascType[type] << ": "
+      std::cout << "Parametro " << getTypeTxt(true)  << ": "
         << id << "\n";
       break;
     }case comp:{
-      std::cout << "Componente " << Types::mascType[type] << ": "
+      std::cout << "Componente " << getTypeTxt(true)  << ": "
         << id;
       break;
     }default: break;
@@ -250,17 +250,17 @@ void Variable::printTree(){
 void Array::printTree(){
   switch (use) {
     case declr:{
-      std::cout << "Declaracao de arranjo " << Types::mascType[type]
+      std::cout << "Declaracao de arranjo " << getTypeTxt(true)
         << " de tamanho " << size << ": " << id;
         break;
     }case attr:{
       std::cout << "Atribuicao de valor para arranjo " <<
-        Types::mascType[type]  << " " << id << " {+indice: ";
+        getTypeTxt(true)  << " " << id << " {+indice: ";
       index->printTree();
       std::cout << "}";
       break;
     }case read:{
-      std::cout << "arranjo " << Types::mascType[type] << " " << id;
+      std::cout << "arranjo " << getTypeTxt(true) << " " << id;
       if(index != nullptr){
         std::cout << " {+indice: ";
         index->printTree();
@@ -268,11 +268,11 @@ void Array::printTree(){
       }
       break;
     }case param:{
-      std::cout << "parametro arranjo " << Types::mascType[type] << " de tamanho " <<
+      std::cout << "parametro arranjo " << getTypeTxt(true) << " de tamanho " <<
         size << ": " << id << "\n";
       break;
     }case comp:{
-      std::cout << "Componente arranjo " << Types::mascType[type] << " de tamanho " <<
+      std::cout << "Componente arranjo " << getTypeTxt(true) << " de tamanho " <<
         size << ": " << id;
       break;
     }default: break;
@@ -447,4 +447,11 @@ void Array::setSize(int n){
     Errors::print(Errors::array_index_lst_1, id.c_str());
   }
   size = n;
+}
+
+const char* Variable::getTypeTxt(bool masc){
+  if(type!=Types::composite_t)
+    return masc ? Types::mascType[type] : Types::femType[type];
+  else
+    return compType.c_str();
 }

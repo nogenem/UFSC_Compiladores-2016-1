@@ -7,6 +7,7 @@ namespace AST{ class Node; }// Odeio 'circular reference'...
 
 namespace ST {
 
+class SymbolTable;
 class Symbol;
 
 typedef std::map<std::string, Symbol*> SymbolList; //Set of Symbols
@@ -23,7 +24,8 @@ class Symbol {
     bool initialized;// Initialized/Defined?
     AST::Node *params;// Parametros de funções
     int aSize;// Array size
-    AST::Node *typeBlock;// Bloco de um tipo composto
+    SymbolTable *typeTable;// Tabela de simbolos do tipo composto
+    std::string compTypeId;// Nome do tipo composto
 };
 
 class SymbolTable {
@@ -47,6 +49,7 @@ class SymbolTable {
     AST::Node* useFunc(std::string id, AST::Node *params);
 
     void setType(AST::Node *node, Types::Type type);
+    void setCompType(AST::Node *node, std::string compType);
     void setArraySize(AST::Node *node, int aSize);
     void addFuncParams(AST::Node *oldParams, AST::Node *newParams);
     void checkFuncs();

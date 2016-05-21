@@ -95,7 +95,7 @@ AST::Node* SymbolTable::defCompType(std::string id, AST::Node *block){
       Kinds::kindName[Kinds::type_t], id.c_str());
   }else{
     Symbol *entry = new Symbol(Kinds::type_t);
-    entry->typeBlock = block;
+    entry->typeTable = dynamic_cast<AST::Block*>(block)->symtab;
     addSymbol(id,entry);
   }
 
@@ -260,7 +260,8 @@ AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
 }
 
 /* Seta o tipo de toda a sequencia de variaveis.
-   Ex: int: a, b, c; (tipo é setado depois de criado os Nodos) */
+ * Ex: int: a, b, c; (tipo é setado depois de criado os Nodos) 
+ */
 void SymbolTable::setType(AST::Node *node, Types::Type type){
   AST::Variable *tmp = (AST::Variable*) node;
   Symbol *tmp2 = nullptr;
@@ -269,6 +270,23 @@ void SymbolTable::setType(AST::Node *node, Types::Type type){
     if(tmp2->type == Types::unknown_t){
       tmp->setType(type);
       tmp2->type = type;
+    }
+    tmp = (AST::Variable*) tmp->next;
+  }
+}
+
+/* Seta o tipo composto de toda a sequencia de variaveis.
+ * Ex: complex: a, b, c; (tipo é setado depois de criado os Nodos)
+ */
+void SymbolTable::setCompType(AST::Node *node, std::string compType){
+  AST::Variable *tmp = (AST::Variable*) node;
+  Symbol *tmp2 = nullptr;
+  while(tmp != nullptr){
+    tmp2 = getSymbol(tmp->id);
+    if(tmp2->type == Types::unknown_t){
+      tmp->setCompType(compType);
+      tmp2->type = Types::composite_t;
+      tmp2->compTypeId = compType;
     }
     tmp = (AST::Variable*) tmp->next;
   }

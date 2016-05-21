@@ -77,12 +77,16 @@ class Variable : public Node {
     virtual NodeType getNodeType(){return variable_nt;}
 
     void setType(Types::Type t){type=t;}
+    void setCompType(std::string id){compType=id;type=Types::composite_t;}
+    const char* getTypeTxt(bool masc);
     virtual Kinds::Kind getKind(){return Kinds::variable_t;}
     virtual bool equals(Variable *var, bool checkNext=false);
 
     std::string id;
     // Para que a variavel vai ser usada
     Use use;
+    // Tipo composto
+    std::string compType="";
 };
 
 class Array : public Variable {
