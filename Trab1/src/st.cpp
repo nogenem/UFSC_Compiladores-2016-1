@@ -102,41 +102,47 @@ AST::Node* SymbolTable::defCompType(std::string id, AST::Node *block){
   return new AST::CompositeType(id, block);
 }
 
-AST::Node* SymbolTable::assignVariable(std::string id){
-  if ( ! checkId(id) ) Errors::print(Errors::without_declaration,
-    Kinds::kindName[Kinds::variable_t], id.c_str());
+void SymbolTable::assignVariable(AST::Node *var){
+  AST::Variable *tmp = dynamic_cast<AST::Variable*>(var);
+  tmp->use = AST::attr;
+  Symbol *symbol = getSymbol(tmp->id);
 
-  auto symbol = getSymbol(id);
-  auto type = Types::unknown_t;
   if(symbol != nullptr){
-    if(symbol->kind != Kinds::variable_t){
-      Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind], id.c_str(),
-        Kinds::kindName[Kinds::variable_t]);
+    if(symbol->kind != tmp->getKind()){
+      Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind], tmp->id.c_str(),
+        Kinds::kindName[tmp->getKind()]);
     }else{
-      symbol->initialized = true;
-      type = symbol->type;
+      if(var->next == nullptr){//apenas uma var/array normal
+        symbol->initialized = true;
+        tmp->type = symbol->type;
+        tmp->compType = symbol->compTypeId;
+      }else{//var/array com tipo composto
+        tmp->type = symbol->type;
+        tmp->compType = symbol->compTypeId;
+        auto tmp2 = dynamic_cast<AST::Variable*>(tmp->next);
+        while(tmp2 != nullptr){
+          symbol = symbol->typeTable!=nullptr?
+            symbol->typeTable->getSymbol(tmp2->id):nullptr;
+          if(symbol == nullptr){
+            Errors::print(Errors::type_wrong_comp, tmp->getTypeTxt(true),
+              tmp2->id.c_str());
+          }else{
+            tmp2->type = symbol->type;
+            tmp2->compType = symbol->compTypeId;
+            if(tmp2->next == nullptr)
+              symbol->initialized = true;
+          }
+
+          tmp2->use = AST::read_comp;
+          tmp = tmp2;
+          tmp2 = dynamic_cast<AST::Variable*>(tmp2->next);
+        }
+      }
     }
+  }else{
+    Errors::print(Errors::without_declaration,
+      Kinds::kindName[tmp->getKind()], tmp->id.c_str());
   }
-  return new AST::Variable(id, NULL, AST::attr, type);
-}
-
-AST::Node* SymbolTable::assignArray(std::string id, AST::Node *index){
-  if( !checkId(id) ) Errors::print(Errors::without_declaration,
-    Kinds::kindName[Kinds::function_t], id.c_str());
-
-  auto symbol = getSymbol(id);
-  auto type = Types::unknown_t;
-  if(symbol != nullptr){
-    if(symbol->kind != Kinds::array_t)
-      Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
-        id.c_str(), Kinds::kindName[Kinds::array_t]);
-    else
-      type = symbol->type;
-  }
-  if(index == nullptr || index->type != Types::integer_t)
-    Errors::print(Errors::index_wrong_type, Types::mascType[index->type]);
-
-  return new AST::Array(id, index, AST::attr, type);
 }
 
 /* 'useOfFunc' significa que a variavel esta sendo usada
@@ -185,7 +191,7 @@ AST::Node* SymbolTable::useArray(std::string id, AST::Node *index){
   if(index == nullptr || index->type != Types::integer_t)
     Errors::print(Errors::index_wrong_type, Types::mascType[index->type]);
 
-  return new AST::Array(id, nullptr, index, AST::read, size, type);
+  return new AST::Array(id, nullptr, index, AST::read, size, "", type);
 }
 
 AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
@@ -259,36 +265,39 @@ AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
   return new AST::Function(id, (defined?params:nullptr), nullptr, AST::read, type);
 }
 
-/* Seta o tipo de toda a sequencia de variaveis.
- * Ex: int: a, b, c; (tipo é setado depois de criado os Nodos) 
+/* Seta as variaveis do Symbol referentes
+ *  ao tipo
  */
-void SymbolTable::setType(AST::Node *node, Types::Type type){
-  AST::Variable *tmp = (AST::Variable*) node;
-  Symbol *tmp2 = nullptr;
-  while(tmp != nullptr){
-    tmp2 = getSymbol(tmp->id);
-    if(tmp2->type == Types::unknown_t){
-      tmp->setType(type);
-      tmp2->type = type;
-    }
-    tmp = (AST::Variable*) tmp->next;
+void Symbol::setType(Types::Type t, std::string tId, SymbolTable* tTable){
+  type = t;
+  if(t == Types::composite_t){
+    compTypeId = tId;
+    typeTable = tTable;
   }
 }
 
-/* Seta o tipo composto de toda a sequencia de variaveis.
- * Ex: complex: a, b, c; (tipo é setado depois de criado os Nodos)
+/* Seta o tipo de toda a sequencia de variaveis
  */
-void SymbolTable::setCompType(AST::Node *node, std::string compType){
-  AST::Variable *tmp = (AST::Variable*) node;
-  Symbol *tmp2 = nullptr;
-  while(tmp != nullptr){
-    tmp2 = getSymbol(tmp->id);
-    if(tmp2->type == Types::unknown_t){
-      tmp->setCompType(compType);
-      tmp2->type = Types::composite_t;
-      tmp2->compTypeId = compType;
+void SymbolTable::setType(AST::Node *node, Types::Type type, std::string compType){
+  AST::Variable *var = dynamic_cast<AST::Variable*>(node);
+  Symbol *varSymbol = nullptr;
+  Symbol *ctSymbol = getSymbol(compType);
+
+  if(type==Types::composite_t && ctSymbol == nullptr)
+    Errors::print(Errors::type_undefined, compType.c_str());
+  else{
+    while(var != nullptr){
+      varSymbol = getSymbol(var->id);
+      if(varSymbol->type == Types::unknown_t){
+        // Cada variavel tem que ter uma cópia das variaveis
+        //  do corpo do tipo [tabela de simbolos do tipo]
+        varSymbol->setType(type, compType, ctSymbol==nullptr?
+          nullptr:ctSymbol->typeTable->copy());
+        var->setType(type, compType);
+      }
+
+      var = dynamic_cast<AST::Variable*>(var->next);
     }
-    tmp = (AST::Variable*) tmp->next;
   }
 }
 
@@ -302,7 +311,8 @@ void SymbolTable::setArraySize(AST::Node *node, int aSize){
 }
 
 /* Adiciona os parametros da declaração ou definição
-    de uma função ao escopo do corpo dela             */
+ *  de uma função ao escopo do corpo dela
+ */
 void SymbolTable::addFuncParams(AST::Node *oldParams, AST::Node *newParams){
   AST::Variable *var = nullptr;
   if(oldParams == nullptr)// Função ja foi declarada
@@ -324,11 +334,34 @@ void SymbolTable::addFuncParams(AST::Node *oldParams, AST::Node *newParams){
 }
 
 /* Verifica se todas as funções declaradas
-    foram definidas                         */
+ *  foram definidas
+*/
 void SymbolTable::checkFuncs(){
   for(const auto& iter : _entryList){
     const auto& symbol = iter.second;
     if(symbol->kind == Kinds::function_t && !symbol->initialized)
       Errors::print(Errors::func_never_declared, iter.first.c_str());
   }
+}
+
+Symbol* Symbol::copy(){
+  Symbol *s = new Symbol(this->kind);
+  s->type = this->type;
+  s->initialized = this->initialized;
+  s->params = this->params;
+  s->aSize = this->aSize;
+  s->compTypeId = this->compTypeId;
+  s->typeTable = this->typeTable!=nullptr?
+    this->typeTable->copy():nullptr;
+
+  return s;
+}
+
+SymbolTable* SymbolTable::copy(){
+  SymbolTable *st = new SymbolTable(this->_previous);
+  for(auto& iter : _entryList){
+    auto& symbol = iter.second;
+    st->addSymbol(iter.first, symbol->copy());
+  }
+  return st;
 }

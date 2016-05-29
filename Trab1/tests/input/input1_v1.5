@@ -1,7 +1,11 @@
-def type: test
-  real[5]: i, r;
-  int[2]: a;
+def type: pos
+  real: x,y;
 end def
 
-test: a,b;
-test[5]: c,d;
+def type: obj
+  pos: p;
+end def
+
+obj[5]: o;
+
+o[1].p.x := 5.0;

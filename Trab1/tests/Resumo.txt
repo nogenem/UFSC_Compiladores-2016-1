@@ -1,3 +1,7 @@
-* Teste do input1_v1.4
-** Sucesso no teste de output do input1_v1.4
-** Sucesso no teste de erro do input1_v1.4
+* Teste do input1_v1.0
+** Sucesso no teste de output do input1_v1.0
+** Falha no teste de erro do input1_v1.0
+6d5
+< [Linha 7] Erro semantico: variavel var sem declaracao.
+8a8
+> [Linha 7] Erro semantico: variavel var sem declaracao.

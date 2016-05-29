@@ -25,8 +25,8 @@ void yyerror(const char* s, ...);
 "TRUE"                          {yylval.value = strdup(yytext); return BOOL_V;}
 "FALSE"                         {yylval.value = strdup(yytext); return BOOL_V;}
 "bool"                          {yylval.type = Types::bool_t; return BOOL_T;}
- /* exit program */
-"exit"                          {return 0;}
+ /* assignment */
+":="                            {return ASSIGN_OPT;}
  /* single character */
 "+" |
 "-" |
@@ -38,7 +38,8 @@ void yyerror(const char* s, ...);
 ")" |
 "[" |
 "]" |
-":"                             {return yytext[0];}
+":" |
+"."                             {return yytext[0];}
  /* relational opts */
 "="                             {return EQ_OPT;}
 "~="                            {return NEQ_OPT;}
@@ -50,8 +51,6 @@ void yyerror(const char* s, ...);
 "AND"                           {return AND_OPT;}
 "OR"                            {return OR_OPT;}
 "~"                             {return NOT_OPT;}
- /* assignment */
-":="                            {return ASSIGN_OPT;}
  /* return */
 "return"                        {return RETURN_T;}
  /* functions */

@@ -14,18 +14,21 @@ typedef std::map<std::string, Symbol*> SymbolList; //Set of Symbols
 
 class Symbol {
   public:
-    Symbol(Kinds::Kind k): kind(k), type(Types::unknown_t),
-      initialized(false), params(nullptr) {}
+    Symbol(Kinds::Kind k): kind(k) {}
     Symbol(AST::Node *params, Types::Type type): kind(Kinds::function_t), type(type),
-      initialized(false), params(params) {}
+      params(params) {}
+
+    void setType(Types::Type t, std::string tId, SymbolTable* tTable);
+    Symbol* copy();
 
     Kinds::Kind kind;
-    Types::Type type;
-    bool initialized;// Initialized/Defined?
-    AST::Node *params;// Parametros de funções
-    int aSize;// Array size
-    SymbolTable *typeTable;// Tabela de simbolos do tipo composto
+    Types::Type type=Types::unknown_t;
+    bool initialized=false;// Initialized/Defined?
+    AST::Node *params=nullptr;// Parametros de funções
+    int aSize=0;// Array size
+
     std::string compTypeId;// Nome do tipo composto
+    SymbolTable *typeTable=nullptr;// Tabela de simbolos do tipo composto
 };
 
 class SymbolTable {
@@ -42,14 +45,12 @@ class SymbolTable {
     AST::Node* defFunction(std::string id, AST::Node *params, AST::Node *block,
       Types::Type type);
     AST::Node* defCompType(std::string id, AST::Node *block);
-    AST::Node* assignVariable(std::string id);
-    AST::Node* assignArray(std::string id, AST::Node *index);
+    void assignVariable(AST::Node *var);
     AST::Node* useVariable(std::string id,bool useOfFunc);
     AST::Node* useArray(std::string id, AST::Node *index);
     AST::Node* useFunc(std::string id, AST::Node *params);
 
-    void setType(AST::Node *node, Types::Type type);
-    void setCompType(AST::Node *node, std::string compType);
+    void setType(AST::Node *node, Types::Type type, std::string compType);
     void setArraySize(AST::Node *node, int aSize);
     void addFuncParams(AST::Node *oldParams, AST::Node *newParams);
     void checkFuncs();
@@ -57,6 +58,8 @@ class SymbolTable {
     SymbolList& getEntryList(){return _entryList;}
     SymbolTable* getPrevious(){return _previous;}
     Symbol* getSymbol(std::string id);
+
+    SymbolTable* copy();
 
   private:
     // Lista de simbolos

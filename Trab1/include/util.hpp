@@ -80,6 +80,7 @@ namespace Errors {
 
 // Mensagens de erros que podem acontecer
 const std::vector<const char*> messages = {
+  "syntax error",//syntax_error
   "lexico: simbolo desconhecido: %c.",//unknown_symbol
   "semantico: %s %s sem declaracao.",//without_declaration
   "semantico: %s %s nao inicializada.",//not_initialized
@@ -88,22 +89,23 @@ const std::vector<const char*> messages = {
   "semantico: operacao %s espera %s mas recebeu %s.",//op_wrong_type1
   "semantico: operacao %s espera inteiro ou real mas recebeu %s.",//op_wrong_type2
   "semantico: indice de tipo %s.",//index_wrong_type
-  "semantico: arranjo %s com tamanho menor do que um.",//array_index_lst_1
+  "semantico: arranjo %s com tamanho menor do que um.",//array_size_lst_1
   "semantico: funcao %s declarada mas nunca definida.",//func_never_declared
   "semantico: parametro espera %s mas recebeu %s.",//param_wrong_type
   "semantico: arranjo %s possui tamanho menor que o necessario.",//array_size_lst_needed
   "semantico: funcao %s espera %d parametros mas recebeu %d.",//func_wrong_param_amount
-  "semantico: tipo %s nao contem parametro %s.",//type_wrong_param
+  "semantico: tipo %s nao contem componente %s.",//type_wrong_comp
   "semantico: funcao sem chamada de retorno.",//func_without_return
   "semantico: funcao %s sofrendo redeclaracao.",//func_redeclaration
-  "semantico: uso de variavel ou valor como arranjo."//param_value_as_array
+  "semantico: uso de variavel ou valor como arranjo.",//param_value_as_array
+  "semantico: tipo %s indefinido."//type_undefined
 };
 
-enum ErrorType {unknown_symbol, without_declaration, not_initialized,
+enum ErrorType {syntax_error, unknown_symbol, without_declaration, not_initialized,
   redefinition, wrong_use, op_wrong_type1, op_wrong_type2, index_wrong_type,
-  array_index_lst_1, func_never_declared, param_wrong_type, array_size_lst_needed,
-  func_wrong_param_amount, type_wrong_param,
-  func_without_return, func_redeclaration, param_value_as_array};
+  array_size_lst_1, func_never_declared, param_wrong_type, array_size_lst_needed,
+  func_wrong_param_amount, type_wrong_comp, func_without_return, func_redeclaration,
+  param_value_as_array, type_undefined};
 
 void print(ErrorType error, ...);
 

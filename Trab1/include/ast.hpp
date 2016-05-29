@@ -9,7 +9,7 @@
 namespace AST {
 
 // Possiveis usos de variaveis, arrays e funções
-enum Use { attr, declr, def, read, param, comp };
+enum Use { unknown, attr, declr, def, read, param, comp, read_comp };
 
 // Possiveis tipos de nodos
 enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
@@ -69,15 +69,23 @@ class Value : public Node {
 
 class Variable : public Node {
   public:
+    Variable(std::string id):
+      Variable(id,nullptr,unknown){}
+    Variable(std::string id, Types::Type type):
+      Variable(id,nullptr,unknown,type){}
+    Variable(std::string id, Node *next):
+      Variable(id,next,unknown){}
     Variable(std::string id, Node *next, Use use,
       Types::Type type=Types::unknown_t):
       id(id), use(use), Node(next,type){}
+    Variable(std::string id, Node *next, Use use,
+      std::string compType, Types::Type type=Types::unknown_t):
+      id(id), use(use), compType(compType), Node(next,type){}
 
     void printTree();
     virtual NodeType getNodeType(){return variable_nt;}
 
-    void setType(Types::Type t){type=t;}
-    void setCompType(std::string id){compType=id;type=Types::composite_t;}
+    void setType(Types::Type t, std::string tId);
     const char* getTypeTxt(bool masc);
     virtual Kinds::Kind getKind(){return Kinds::variable_t;}
     virtual bool equals(Variable *var, bool checkNext=false);
@@ -91,15 +99,22 @@ class Variable : public Node {
 
 class Array : public Variable {
   public:
+    Array(std::string id, Node *index, Types::Type type):
+      index(index), Variable(id, type){}//construtor dumb
+
+    Array(std::string id, Node *index):
+      Array(id,nullptr,index,unknown,1,"",Types::unknown_t){}
+    Array(std::string id, Node *next, Node *index):
+      Array(id,next,index,unknown,1,"",Types::unknown_t){}
     Array(std::string id, Node *next, Use use):
-      Array(id,next,nullptr,use,1,Types::unknown_t){}
+      Array(id,next,nullptr,use,1,"",Types::unknown_t){}
     Array(std::string id, Node *index, Use use, Types::Type type):
-      Array(id,nullptr,index,use,1,type){}
+      Array(id,nullptr,index,use,1,"",type){}
     Array(std::string id, Node *next, Use use,
       int aSize, Types::Type type):
-      Array(id,next,nullptr,use,aSize,type){}
+      Array(id,next,nullptr,use,aSize,"",type){}
     Array(std::string id, Node *next, Node *i,
-      Use use, int aSize, Types::Type type);
+      Use use, int aSize, std::string compType, Types::Type type);
 
     void printTree();
     NodeType getNodeType(){return array_nt;}

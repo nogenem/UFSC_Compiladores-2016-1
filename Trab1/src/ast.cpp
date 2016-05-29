@@ -51,15 +51,19 @@ Function::Function(std::string id, Node *params, Node *block, Use use,
 }
 
 Array::Array(std::string id, Node *next, Node *i,
-  Use use, int aSize, Types::Type type):
-  Variable(id,next,use,type){
+  Use use, int aSize, std::string compType, Types::Type type):
+  Variable(id,next,use,compType,type){
 
   // Verifica se o tamanho do arranjo é
   // maior ou igual a 1
   if(aSize < 1){
     aSize = 1;
-    Errors::print(Errors::array_index_lst_1, id.c_str());
+    Errors::print(Errors::array_size_lst_1, id.c_str());
   }
+  // Verifica se o index é uma expressão inteira
+  if(i != nullptr && i->type != Types::integer_t)
+    Errors::print(Errors::index_wrong_type, Types::mascType[i->type]);
+
   size = aSize;
   index = i;
 }
@@ -89,12 +93,22 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
     }
   }
 
+  // Gambiarra para pegar o tipo do ultimo
+  //  elemento da atribuição
+  // Ex: p[1].x := 5.0;
+  auto ltmp = left;
+  auto rtmp = right;
+  while(ltmp->next != nullptr)
+    ltmp = ltmp->next;
+  while(rtmp->next != nullptr)
+    rtmp = rtmp->next;
+
   // Tipo do lado esquerdo
-  auto l = left->type;
+  auto l = ltmp->type;
   // Texto do tipo do lado esquerdo
   auto ltxt = Types::mascType[l];
   // Tipo do lado direito
-  auto r = right->type;
+  auto r = rtmp->type;
   // Texto do tipo do lado direito
   auto rtxt = Types::mascType[r];
   // Texto da operação
@@ -223,6 +237,10 @@ void Variable::printTree(){
     }case read:{
       std::cout << "variavel " << getTypeTxt(false)  << " " << id;
       break;
+    }case read_comp:{
+        std::cout << " componente " << getTypeTxt(true)  << " "
+          << id;
+        break;
     }case param:{
       std::cout << "Parametro " << getTypeTxt(true)  << ": "
         << id << "\n";
@@ -241,7 +259,7 @@ void Variable::printTree(){
         tmp = dynamic_cast<Variable*>(tmp->next);
       }
     }else{
-      std::cout << (use==param?"":", ");
+      std::cout << (use==read?", ":"");
       next->printTree();
     }
   }
@@ -267,8 +285,17 @@ void Array::printTree(){
         std::cout << "}";
       }
       break;
+    }case read_comp:{
+        std::cout << " componente " << getTypeTxt(true)  << " "
+          << id;
+		if(index != nullptr){
+		  std::cout << " {+indice: ";
+		  index->printTree();
+		  std::cout << "}";
+	    }
+        break;
     }case param:{
-      std::cout << "parametro arranjo " << getTypeTxt(true) << " de tamanho " <<
+      std::cout << "Parametro arranjo " << getTypeTxt(true) << " de tamanho " <<
         size << ": " << id << "\n";
       break;
     }case comp:{
@@ -285,7 +312,7 @@ void Array::printTree(){
         tmp = dynamic_cast<Variable*>(tmp->next);
       }
     }else{
-      std::cout << (use==param?"":", ");
+      std::cout << (use==read?", ":"");
       next->printTree();
     }
   }
@@ -444,9 +471,15 @@ bool Function::equals(Variable *var, bool checkNext/*=false*/){
 void Array::setSize(int n){
   if(n < 1){
     n = 1;
-    Errors::print(Errors::array_index_lst_1, id.c_str());
+    Errors::print(Errors::array_size_lst_1, id.c_str());
   }
   size = n;
+}
+
+void Variable::setType(Types::Type t, std::string tId){
+  type = t;
+  if(t == Types::composite_t)
+    compType = tId;
 }
 
 const char* Variable::getTypeTxt(bool masc){
