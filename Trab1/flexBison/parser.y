@@ -38,6 +38,9 @@ void handlerDParams(AST::Node *&r, std::string id, AST::Node *type, AST::Node *n
   TODO:
     arrumar construtores
       Variable => checar se type=composto antes de setar variable compType
+      Var e Array => remover construtores dumbs e fazer checagem de tipo do index
+        usando 'syntaxError' como parametro
+    verificar IFS do _useVariable
 
     tratar os warning!? [problema ta no 'cond', 'def' e um desconhecido]
     arrumar problema test((v)+2); !?
@@ -248,8 +251,7 @@ expr    : term                    { $$ = $1; }
 term    : BOOL_V            { $$ = new AST::Value($1, Types::bool_t); }
         | INT_V             { $$ = new AST::Value($1, Types::integer_t); }
         | REAL_V            { $$ = new AST::Value($1, Types::real_t); }
-        | ID_V              { $$ = symtab->useVariable($1,useOfFunc); }
-        | ID_V '[' expr ']' { $$ = symtab->useArray($1, $3); }
+        | complist          { $$ = symtab->useVariable($1, useOfFunc); }
         | ID_V '(' useoffunc uparamlist ')'
             { $$ = symtab->useFunc($1, $4); useOfFunc = false; }
         ;

@@ -312,7 +312,8 @@ void Array::printTree(){
         tmp = dynamic_cast<Variable*>(tmp->next);
       }
     }else{
-      std::cout << (use==read?", ":"");
+      std::cout << (use==read&&type!=Types::composite_t?
+          ", ":"");
       next->printTree();
     }
   }

@@ -46,8 +46,7 @@ class SymbolTable {
       Types::Type type);
     AST::Node* defCompType(std::string id, AST::Node *block);
     void assignVariable(AST::Node *var);
-    AST::Node* useVariable(std::string id,bool useOfFunc);
-    AST::Node* useArray(std::string id, AST::Node *index);
+    AST::Node* useVariable(AST::Node *node, bool useOfFunc);
     AST::Node* useFunc(std::string id, AST::Node *params);
 
     void setType(AST::Node *node, Types::Type type, std::string compType);
@@ -62,6 +61,9 @@ class SymbolTable {
     SymbolTable* copy();
 
   private:
+    AST::Node* _useVariable(AST::Node *node, bool useOfFunc);
+    AST::Node* _useArray(AST::Node *node, bool useOfFunc);
+
     // Lista de simbolos
     SymbolList _entryList;
     // 'Escopo' anterior

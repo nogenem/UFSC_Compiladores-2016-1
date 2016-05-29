@@ -145,53 +145,95 @@ void SymbolTable::assignVariable(AST::Node *var){
   }
 }
 
+AST::Node* SymbolTable::useVariable(AST::Node *node, bool useOfFunc){
+  if(node->getNodeType() == AST::variable_nt)
+    node = this->_useVariable(node, useOfFunc);
+  else
+    node = this->_useArray(node, useOfFunc);
+
+  if(node->next != nullptr){
+    auto tmp1 = dynamic_cast<AST::Variable*>(node);
+    auto tmp2 = dynamic_cast<AST::Variable*>(node->next);
+    if(node->type != Types::composite_t){
+      Errors::print(Errors::type_wrong_comp, tmp1->getTypeTxt(true), tmp2->id.c_str());
+    }else{
+      auto symbol = getSymbol(tmp1->id);
+      if(symbol != nullptr){
+        symbol = symbol->typeTable!=nullptr?
+          symbol->typeTable->getSymbol(tmp2->id):nullptr;
+        if(symbol == nullptr)
+          Errors::print(Errors::type_wrong_comp, tmp1->getTypeTxt(true), tmp2->id.c_str());
+      }else{
+        Errors::print(Errors::type_wrong_comp, tmp1->getTypeTxt(true), tmp2->id.c_str());
+      }
+    }
+    auto symbol = getSymbol(tmp1->id);
+    if(symbol && symbol->typeTable!=nullptr){
+      node->next = symbol->typeTable->useVariable(node->next, useOfFunc);
+      dynamic_cast<AST::Variable*>(node->next)->use = AST::read_comp;
+    }
+  }
+
+  return node;
+}
+
 /* 'useOfFunc' significa que a variavel esta sendo usada
      no uso de uma função. Ex: c := soma(a, b);
     Isto é uma gambiarra para que possa ser usado arranjos
      como parametros de funções                             */
-AST::Node* SymbolTable::useVariable(std::string id, bool useOfFunc){
-  if ( ! checkId(id) ) Errors::print(Errors::without_declaration,
-    Kinds::kindName[Kinds::variable_t], id.c_str());
+AST::Node* SymbolTable::_useVariable(AST::Node *node, bool useOfFunc){
+  auto var = dynamic_cast<AST::Variable*>(node);
+  var->use = AST::read;
 
-  auto symbol = getSymbol(id);
-  auto type = Types::unknown_t;
+  if ( ! checkId(var->id) ) Errors::print(Errors::without_declaration,
+    Kinds::kindName[Kinds::variable_t], var->id.c_str());
+
+  auto symbol = getSymbol(var->id);
   if ( symbol != nullptr ){
-    type = symbol->type;
-    if(!useOfFunc && symbol->kind != Kinds::variable_t){
+    var->type = symbol->type;
+    var->compType = symbol->compTypeId;
+    if(symbol->kind == Kinds::type_t ||
+        ((!useOfFunc||var->next!=nullptr) && symbol->kind != Kinds::variable_t)){
       Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
-        id.c_str(), Kinds::kindName[Kinds::variable_t]);
-      type = Types::unknown_t;
-    }else if(!useOfFunc && checkId(id,true) && !symbol->initialized){
+        var->id.c_str(), Kinds::kindName[Kinds::variable_t]);
+      var->type = Types::unknown_t;
+      var->compType = "";
+    }else if(symbol->type != Types::composite_t && !useOfFunc && checkId(var->id,true) && !symbol->initialized){
       Errors::print(Errors::not_initialized, Kinds::kindName[Kinds::variable_t],
-        id.c_str());
+        var->id.c_str());
     }
   }
-  if(useOfFunc && symbol != nullptr && symbol->kind == Kinds::array_t)
-    return new AST::Array(id,nullptr,AST::read,symbol->aSize,type);
-  else
-    return new AST::Variable(id, NULL, AST::read, type);
+  if(useOfFunc && symbol != nullptr && symbol->kind == Kinds::array_t  && var->next == nullptr){
+    auto arr = new AST::Array(var->id, var->next, nullptr, AST::read,
+        symbol->aSize, var->compType, var->type);
+    delete node;
+    return arr;
+  }else
+    return var;
 }
 
-AST::Node* SymbolTable::useArray(std::string id, AST::Node *index){
-  if( !checkId(id) ) Errors::print(Errors::without_declaration,
-    Kinds::kindName[Kinds::array_t], id.c_str());
+AST::Node* SymbolTable::_useArray(AST::Node *node, bool useOfFunc){
+  auto arr = dynamic_cast<AST::Array*>(node);
+  arr->use = AST::read;
 
-  auto symbol = getSymbol(id);
-  auto type = Types::unknown_t;
-  int size = 0;
+  if( !checkId(arr->id) ) Errors::print(Errors::without_declaration,
+    Kinds::kindName[Kinds::array_t], arr->id.c_str());
+
+  auto symbol = getSymbol(arr->id);
   if(symbol != nullptr){
     if(symbol->kind != Kinds::array_t)
       Errors::print(Errors::wrong_use, Kinds::kindName[symbol->kind],
-        id.c_str(), Kinds::kindName[Kinds::array_t]);
+        arr->id.c_str(), Kinds::kindName[Kinds::array_t]);
     else{
-      type = symbol->type;
-      size = symbol->aSize;
+      arr->type = symbol->type;
+      arr->compType = symbol->compTypeId;
+      arr->size = symbol->aSize;
     }
   }
-  if(index == nullptr || index->type != Types::integer_t)
-    Errors::print(Errors::index_wrong_type, Types::mascType[index->type]);
+  if(arr->index == nullptr || arr->index->type != Types::integer_t)
+    Errors::print(Errors::index_wrong_type, Types::mascType[arr->index->type]);
 
-  return new AST::Array(id, nullptr, index, AST::read, size, "", type);
+  return arr;
 }
 
 AST::Node* SymbolTable::useFunc(std::string id, AST::Node *params){
