@@ -2,9 +2,6 @@
 
 #include <vector>
 
-/*
-  Ideia vinda da versão 1.0 do professor.
-*/
 namespace Ops {
 
 // Possiveis operações, tanto binarias quanto unárias
@@ -42,7 +39,7 @@ const std::vector<const char*> opName = {
 namespace Types {
 
 // Possiveis tipos de variaveis, arranjos e afins
-enum Type {unknown_t, integer_t, real_t, bool_t, composite_t};
+enum Type { unknown_t, integer_t, real_t, bool_t, composite_t };
 
 const std::vector<const char*> mascType = {
   "desconhecido",
@@ -51,7 +48,6 @@ const std::vector<const char*> mascType = {
   "booleano",
   "composto"
 };
-
 const std::vector<const char*> femType = {
   "desconhecida",
   "inteira",
@@ -74,6 +70,7 @@ const std::vector<const char*> kindName = {
   "funcao",
   "tipo"
 };
+
 }
 
 namespace Errors {

@@ -13,61 +13,95 @@ class Symbol;
 typedef std::map<std::string, Symbol*> SymbolList; //Set of Symbols
 
 class Symbol {
-  public:
-    Symbol(Kinds::Kind k): kind(k) {}
-    Symbol(AST::Node *params, Types::Type type): kind(Kinds::function_t), type(type),
-      params(params) {}
+public:
+  // constructors
+  Symbol(Kinds::Kind kind):
+    _kind(kind){}
+  Symbol(AST::Node *params, Types::Type type):
+    _params(params), _type(type), _kind(Kinds::function_t){}
 
-    void setType(Types::Type t, std::string tId, SymbolTable* tTable);
-    Symbol* copy();
+  // destructors
+  ~Symbol(){}
 
-    Kinds::Kind kind;
-    Types::Type type=Types::unknown_t;
-    bool initialized=false;// Initialized/Defined?
-    AST::Node *params=nullptr;// Parametros de funções
-    int aSize=0;// Array size
+  // other funcs
+  void setType(Types::Type type, std::string compType,
+    SymbolTable* typeTable);
+  Symbol* copy();
+  void initializeAllComps();
 
-    std::string compTypeId;// Nome do tipo composto
-    SymbolTable *typeTable=nullptr;// Tabela de simbolos do tipo composto
+  // getters
+  Kinds::Kind getKind(){return _kind;}
+  Types::Type getType(){return _type;}
+  bool isInitialized(){return _initialized;}
+  int getArraySize(){return _aSize;}
+  AST::Node* getParams(){return _params;}
+  std::string getCompType(){return _compType;}
+  SymbolTable* getTypeTable(){return _typeTable;}
+  // setters
+  void setKind(Kinds::Kind kind){_kind=kind;}
+  void setType(Types::Type type){_type=type;}
+  void setInitialized(bool initialized){_initialized=initialized;}
+  void setArraySize(int aSize){_aSize=aSize;}
+  void setParams(AST::Node *params){_params=params;}
+  void setCompType(std::string compType){_compType=compType;}
+  void setTypeTable(SymbolTable *typeTable){_typeTable=typeTable;}
+private:
+  Kinds::Kind _kind=Kinds::unknown_t;
+  Types::Type _type=Types::unknown_t;
+  bool _initialized=false;
+  int _aSize=-1;
+  AST::Node *_params=nullptr;
+
+  std::string _compType="";
+  SymbolTable *_typeTable=nullptr;
 };
 
 class SymbolTable {
-  public:
-    SymbolTable(SymbolTable *prev) : _previous(prev) {}
-    ~SymbolTable() {}
+public:
+  // constructors
+  SymbolTable(SymbolTable *prev):
+    _previous(prev){}
 
-    bool checkId(std::string id, bool creation=false);
-    void addSymbol(std::string id, Symbol *newsymbol);
+  // destructors
+  ~SymbolTable(){}//TODO?
 
-    AST::Node* newVariable(std::string id, AST::Node* next, bool isArray,
-      bool insideType=false);
-    AST::Node* declFunction(std::string id, AST::Node *params, Types::Type type);
-    AST::Node* defFunction(std::string id, AST::Node *params, AST::Node *block,
-      Types::Type type);
-    AST::Node* defCompType(std::string id, AST::Node *block);
-    void assignVariable(AST::Node *var);
-    AST::Node* useVariable(AST::Node *node, bool useOfFunc);
-    AST::Node* useFunc(std::string id, AST::Node *params);
+  // other funcs
+  void assignVariable(AST::Node *node);
+  AST::Node* declFunction(AST::Node *params, std::string id,
+    Types::Type type);
+  AST::Node* defFunction(AST::Node *params, AST::Node *block, std::string id,
+    Types::Type type);
+  AST::Node* defCompType(std::string id, AST::Node *block, SymbolTable *st);
+  AST::Node* newVariable(std::string id, AST::Node *next, bool isArray,
+    bool insideType=false);
+  AST::Node* useVariable(AST::Node *node, bool useOfFunc);
+  AST::Node* useFunc(AST::Node *params, std::string id);
+  void addFuncParams(AST::Node *oldParams, AST::Node *newParams);
+  void checkFuncs();
+  void initializeAllVars();
 
-    void setType(AST::Node *node, Types::Type type, std::string compType);
-    void setArraySize(AST::Node *node, int aSize);
-    void addFuncParams(AST::Node *oldParams, AST::Node *newParams);
-    void checkFuncs();
+  void setType(AST::Node *node, Types::Type type, std::string compType);
+  void setArraySize(AST::Node *node, int size);
 
-    SymbolList& getEntryList(){return _entryList;}
-    SymbolTable* getPrevious(){return _previous;}
-    Symbol* getSymbol(std::string id);
+  bool checkId(std::string id, bool creation=false);
+  void addSymbol(std::string id, Symbol *newsymbol);
+  SymbolTable* copy();
 
-    SymbolTable* copy();
-
-  private:
-    AST::Node* _useVariable(AST::Node *node, bool useOfFunc);
-    AST::Node* _useArray(AST::Node *node, bool useOfFunc);
-
-    // Lista de simbolos
-    SymbolList _entryList;
-    // 'Escopo' anterior
-    SymbolTable *_previous;
+  // getters
+  SymbolList& getEntryList(){return _entryList;}
+  SymbolTable* getPrevious(){return _previous;}
+  Symbol* getSymbol(std::string id);
+  // setters
+private:
+  // other funcs
+  AST::Node* _useVariable(AST::Node *node, bool useOfFunc);
+  AST::Node* _useArray(AST::Node *node, bool useOfFunc);
+  void _checkIndex(AST::Node *node);
+private:
+  // Lista de simbolos
+  SymbolList _entryList;
+  // 'Escopo' anterior
+  SymbolTable *_previous;
 };
 
 }

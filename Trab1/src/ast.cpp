@@ -2,158 +2,152 @@
 
 using namespace AST;
 
-// Construtores
-
-CondExpr::CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
-  cond(cond), thenBranch(thenBranch), elseBranch(elseBranch){
-
-  if(cond->type != Types::bool_t){
-    Errors::print(Errors::op_wrong_type1, "enquanto",
-        Types::mascType[Types::bool_t], Types::mascType[cond->type]);
-  }
-}
-
-WhileExpr::WhileExpr(Node *cond, Node *block):
-  cond(cond), block(block){
-
-  if(cond->type != Types::bool_t){
-    Errors::print(Errors::op_wrong_type1, "teste",
-        Types::mascType[Types::bool_t], Types::mascType[cond->type]);
-  }
-}
-
-Function::Function(std::string id, Node *params, Node *block, Use use,
+// constructors
+Array::Array(Node *index, int size, std::string id, Use use,
+  std::string compType, Node *nextComp, Node *next,
   Types::Type type/*=Types::unknown_t*/):
-  params(params), block(block), Variable(id,nullptr,use,type){
+  _index(index), _size(size),
+  Variable(id,use,compType,nextComp,next,type){
+
+  // Verifica se o tamanho do arranjo é
+  // maior ou igual a 1
+  if(_size < 1){
+    _size = 1;
+    Errors::print(Errors::array_size_lst_1, getId());
+  }
+
+  // Verifica se o index é uma expressão inteira
+  if(_index != nullptr && _index->getType() != Types::integer_t)
+    Errors::print(Errors::index_wrong_type,
+      Types::mascType[_index->getType()]);
+}
+
+Function::Function(Node *params, Node *block, std::string id, Use use,
+  std::string compType, Node *nextComp, Node *next,
+  Types::Type type/*=Types::unknown_t*/):
+  _params(params), _block(block),
+  Variable(id,use,compType,nextComp,next,type){
 
   // Verifica se tem pelo menos um return no corpo
   // da função e verifica se o tipo do return
   // bate com o da função
-  if(block != nullptr){
-    bool foundReturn = false;
-    Block *b = (Block*)block;
+  Types::Type ftype = getType(), rtype = Types::unknown_t;
+  if(_block != nullptr){
+    bool found = false;
+    Block *b = Block::cast(_block);
     Return *r = nullptr;
-    for(Node *line : b->lines){
-      if(line->getNodeType() == return_nt){
-        r = (Return*)line;
-        r->funcType = type;//gambiarra para coerção
-        if(r->type!=type && !(type==Types::real_t && r->type==Types::integer_t))
+    for(Node *line : b->getLines()){
+      r = Return::cast(line);
+      if(r != nullptr){
+        r->setFuncType(ftype);
+        rtype = r->getType();
+        if(rtype != ftype &&
+            !(ftype==Types::real_t && rtype==Types::integer_t))
           Errors::print(Errors::op_wrong_type1, "retorno",
-            Types::mascType[type], Types::mascType[line->type]);
+            Types::mascType[ftype], Types::mascType[rtype]);
 
-        foundReturn = true;
+        found = true;
       }
     }
-
-    if(!foundReturn)
+    if(!found)
       Errors::print(Errors::func_without_return);
   }
 }
 
-Array::Array(std::string id, Node *next, Node *i,
-  Use use, int aSize, std::string compType, Types::Type type):
-  Variable(id,next,use,compType,type){
+CondExpr::CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
+  _cond(cond), _thenBranch(thenBranch), _elseBranch(elseBranch){
 
-  // Verifica se o tamanho do arranjo é
-  // maior ou igual a 1
-  if(aSize < 1){
-    aSize = 1;
-    Errors::print(Errors::array_size_lst_1, id.c_str());
+  if(_cond->getType() != Types::bool_t){
+    Errors::print(Errors::op_wrong_type1, "enquanto",
+        Types::mascType[Types::bool_t], Types::mascType[_cond->getType()]);
   }
-  // Verifica se o index é uma expressão inteira
-  if(i != nullptr && i->type != Types::integer_t)
-    Errors::print(Errors::index_wrong_type, Types::mascType[i->type]);
+}
 
-  size = aSize;
-  index = i;
+WhileExpr::WhileExpr(Node *cond, Node *block):
+  _cond(cond), _block(block){
+
+  if(_cond->getType() != Types::bool_t){
+    Errors::print(Errors::op_wrong_type1, "teste",
+        Types::mascType[Types::bool_t], Types::mascType[_cond->getType()]);
+  }
 }
 
 BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
-  left(left), op(op), right(right){
+  _left(left), _op(op), _right(right){
 
   // verificações se o lado esquerdo ou direito
   // da operação é um arranjo, gambiarra por causa
   // dos parametros para uso de funções...
-  if(op != Ops::assign){
-    if(left->getNodeType() == array_nt){
-      auto tmp = dynamic_cast<Array*>(left);
-      if(tmp->index == nullptr){
-        left->type = Types::unknown_t;
+  if(_op != Ops::assign){
+    Array* tmp = Array::cast(_left);
+    if(tmp != nullptr){
+      if(tmp->getIndex() == nullptr){
+        _left->setType(Types::unknown_t);
         Errors::print(Errors::wrong_use, Kinds::kindName[Kinds::array_t],
-          tmp->id.c_str(), Kinds::kindName[Kinds::variable_t]);
+          tmp->getId(), Kinds::kindName[Kinds::variable_t]);
       }
     }
-    if(right->getNodeType() == array_nt){
-      auto tmp = dynamic_cast<Array*>(right);
-      if(tmp->index == nullptr){
-        right->type = Types::unknown_t;
+    tmp = Array::cast(_right);
+    if(tmp != nullptr){
+      if(tmp->getIndex() == nullptr){
+        _right->setType(Types::unknown_t);
         Errors::print(Errors::wrong_use, Kinds::kindName[Kinds::array_t],
-          tmp->id.c_str(), Kinds::kindName[Kinds::variable_t]);
+          tmp->getId(), Kinds::kindName[Kinds::variable_t]);
       }
     }
   }
 
-  // Gambiarra para pegar o tipo do ultimo
-  //  elemento da atribuição
-  // Ex: p[1].x := 5.0;
-  auto ltmp = left;
-  auto rtmp = right;
-  while(ltmp->next != nullptr)
-    ltmp = ltmp->next;
-  while(rtmp->next != nullptr)
-    rtmp = rtmp->next;
-
   // Tipo do lado esquerdo
-  auto l = ltmp->type;
+  auto l = _left->getType(true);
   // Texto do tipo do lado esquerdo
   auto ltxt = Types::mascType[l];
   // Tipo do lado direito
-  auto r = rtmp->type;
+  auto r = _right->getType(true);
   // Texto do tipo do lado direito
   auto rtxt = Types::mascType[r];
   // Texto da operação
-  auto optxt = Ops::opName[op];
+  auto optxt = Ops::opName[_op];
 
-  switch (op) {
-    case Ops::assign:
-      type = l;
+  switch (_op) {
+    case Ops::assign:{
+      setType(l);
       if(l != r && !(l==Types::real_t && r==Types::integer_t))
         Errors::print(Errors::op_wrong_type1, optxt, ltxt, rtxt);
       break;
-
+    }
     case Ops::plus:
     case Ops::b_minus:
     case Ops::times:
     case Ops::division:{
-      type = Types::integer_t;
+      setType(Types::integer_t);
       // Coerção
       if( (l==Types::real_t && r==Types::real_t) ||
           (l==Types::real_t && r==Types::integer_t) ||
           (l==Types::integer_t && r==Types::real_t)){
-        type = Types::real_t;
+        setType(Types::real_t);
       }
       if(l!=Types::integer_t && l!=Types::real_t)
         Errors::print(Errors::op_wrong_type2, optxt, ltxt);
       if(r!=Types::integer_t && r!=Types::real_t)
         Errors::print(Errors::op_wrong_type2, optxt, rtxt);
       break;
-
-    }case Ops::eq:
+    }
+    case Ops::eq:
     case Ops::neq:
     case Ops::grt:
     case Ops::grteq:
     case Ops::lst:
-    case Ops::lsteq:
-      type = Types::bool_t;
+    case Ops::lsteq:{
+      setType(Types::bool_t);
       if(l!=Types::integer_t && l!=Types::real_t)
         Errors::print(Errors::op_wrong_type2, optxt, ltxt);
       if(r!=Types::integer_t && r!=Types::real_t)
         Errors::print(Errors::op_wrong_type2, optxt, rtxt);
       break;
-
+    }
     case Ops::b_and:
-    case Ops::b_or:
-      type = Types::bool_t;
+    case Ops::b_or:{
+      setType(Types::bool_t);
       if(l!=Types::bool_t)
         Errors::print(Errors::op_wrong_type1, optxt,
           Types::mascType[Types::bool_t], ltxt);
@@ -161,331 +155,585 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
         Errors::print(Errors::op_wrong_type1, optxt,
           Types::mascType[Types::bool_t], rtxt);
       break;
-
-    default: type = Types::unknown_t;
+    }
+    default: setType(Types::unknown_t);
   }
 }
 
 UniOp::UniOp(Ops::Operation op, Node *right):
-  op(op), right(right) {
+  _op(op), _right(right){
 
   // verificações se o lado direito
   // da operação é um arranjo, gambiarra por causa
   // dos parametros para uso de funções...
-  if(op != Ops::u_paren){
-    if(right->getNodeType() == array_nt){
-      auto tmp = dynamic_cast<Array*>(right);
-      if(tmp->index == nullptr){
-        right->type = Types::unknown_t;
+  if(_op != Ops::u_paren){
+    auto tmp = Array::cast(_right);
+    if(tmp != nullptr){
+      if(tmp->getIndex() == nullptr){
+        _right->setType(Types::unknown_t);
         Errors::print(Errors::wrong_use, Kinds::kindName[Kinds::array_t],
-          tmp->id.c_str(), Kinds::kindName[Kinds::variable_t]);
+          tmp->getId(), Kinds::kindName[Kinds::variable_t]);
       }
     }
   }
 
   // Tipo do lado direito
-  auto r = right->type;
+  auto r = _right->getType(true);
   // Texto do tipo do lado direito
   auto rtxt = Types::mascType[r];
   // Texto da operação
-  auto optxt = Ops::opName[op];
+  auto optxt = Ops::opName[_op];
 
-  switch (op) {
-    case Ops::u_not:
-      type = Types::bool_t;
+  switch (_op) {
+    case Ops::u_not:{
+      setType(Types::bool_t);
       if(r!=Types::bool_t)
         Errors::print(Errors::op_wrong_type1, optxt,
           Types::mascType[Types::bool_t], rtxt);
       break;
-
-    case Ops::u_minus:
-      type = Types::integer_t;
+    }
+    case Ops::u_minus:{
+      setType(Types::integer_t);
       if(r==Types::real_t || r==Types::integer_t)
-        type = r;
+        setType(r);
       else
         Errors::print(Errors::op_wrong_type2, optxt, rtxt);
       break;
-
-    case Ops::u_paren:
-      type = r;
+    }
+    case Ops::u_paren:{
+      setType(r);
       break;
-
-    default: type = Types::unknown_t;
+    }
+    default: setType(Types::unknown_t);
   }
 }
 
-// Prints
+// destructors
+Node::~Node(){
+  if(_next != nullptr)
+    delete _next;
+}
+
+Block::~Block(){
+  for(auto& line : _lines)
+    delete line;
+}
+
+Array::~Array(){
+  if(_index != nullptr)
+    delete _index;
+}
+
+Function::~Function(){
+  if(_params != nullptr)
+    delete _params;
+  if(_block != nullptr)
+    delete _block;
+}
+
+Return::~Return(){
+  if(_expr != nullptr)
+    delete _expr;
+}
+
+CondExpr::~CondExpr(){
+  if(_cond != nullptr)
+    delete _cond;
+  if(_thenBranch != nullptr)
+    delete _thenBranch;
+  if(_elseBranch != nullptr)
+    delete _elseBranch;
+}
+
+WhileExpr::~WhileExpr(){
+  if(_cond != nullptr)
+    delete _cond;
+  if(_block != nullptr)
+    delete _block;
+}
+
+BinOp::~BinOp(){
+  if(_left != nullptr)
+    delete _left;
+  if(_right != nullptr)
+    delete _right;
+}
+
+UniOp::~UniOp(){
+  if(_right != nullptr)
+    delete _right;
+}
+
+// getters
+/* 'checkComps' só usado na classe 'Variable'
+ */
+Types::Type Node::getType(bool checkComps/*=false*/){
+  return _type;
+}
+
+const char* Node::getTypeTxt(bool masc){
+  if(masc)
+    return Types::mascType[_type];
+  else
+    return Types::femType[_type];
+}
+
+/* @param checkComps    É para pegar o tipo do ultimo componente?
+ */
+Types::Type Variable::getType(bool checkComps/*=false*/){
+  if(!checkComps)
+    return Node::getType();
+
+  auto comp = Variable::cast(_nextComp);
+  return comp != nullptr ? comp->getType(checkComps) : Node::getType();
+}
+
+const char* Variable::getTypeTxt(bool masc){
+  if(hasCompType())
+    return _compType.c_str();
+  else
+    return Node::getTypeTxt(masc);
+}
+
+/* @param checkParens     É para pegar a expr dentro do parenteses?
+ */
+Node* BinOp::getLeft(bool checkParens/*=false*/){
+  if(!checkParens)
+    return _left;
+
+  auto tmp = UniOp::cast(_left);
+  if(tmp != nullptr && tmp->getOp() == Ops::u_paren)
+    return tmp->getRight(checkParens);
+
+  return _left;
+}
+
+/* @param checkParens     É para pegar a expr dentro do parenteses?
+ */
+Node* BinOp::getRight(bool checkParens/*=false*/){
+  if(!checkParens)
+    return _right;
+
+  auto tmp = UniOp::cast(_right);
+  if(tmp != nullptr && tmp->getOp() == Ops::u_paren)
+    return tmp->getRight(checkParens);
+
+  return _right;
+}
+
+/* @param checkParens     É para pegar a expr dentro do parenteses?
+ */
+Node* UniOp::getRight(bool checkParens/*=false*/){
+  if(!checkParens)
+    return _right;
+
+  auto tmp = UniOp::cast(_right);
+  if(tmp != nullptr && tmp->getOp() == Ops::u_paren)
+    return tmp->getRight(checkParens);
+
+  return _right;
+}
+
+
+
+// setters
+void Array::setSize(int size){
+  // verifica se o tamanho é maior ou igual a 1
+  if(size < 1){
+    size = 1;
+    Errors::print(Errors::array_size_lst_1, getId());
+  }
+  _size = size;
+}
+
+void Variable::setType(Types::Type type, std::string compType){
+  Node::setType(type);
+  if(type == Types::composite_t)
+    setCompType(compType);
+}
+
+// printTrees
+void Block::printTree(){
+  for(auto& line : _lines) {
+      line->printTree();
+      std::cout << std::endl;
+  }
+}
 
 void Value::printTree(){
-  std::cout << "valor " << Types::mascType[type] << " " << n;
-  if(next != nullptr){
+  std::cout << "valor " << getTypeTxt(true) << " " << getN();
+  if(getNext() != nullptr){//chamada de função
     std::cout << ", ";
-    next->printTree();
+    getNext()->printTree();
   }
 }
 
 void Variable::printTree(){
-  switch (use) {
-    case declr:{
+  switch (_use) {
+    case declr_u:{
       std::cout << "Declaracao de variavel " << getTypeTxt(false) <<
-        ": " << id;
+        ": " << getId();
       break;
-    }case attr:{
+    }
+    case attr_u:{
       std::cout << "Atribuicao de valor para variavel " <<
-        getTypeTxt(false)   << " " << id;
+        getTypeTxt(false) << " " << getId();
       break;
-    }case read:{
-      std::cout << "variavel " << getTypeTxt(false)  << " " << id;
+    }
+    case read_u:{
+      std::cout << "variavel " << getTypeTxt(false) << " " << getId();
       break;
-    }case read_comp:{
-        std::cout << " componente " << getTypeTxt(true)  << " "
-          << id;
-        break;
-    }case param:{
-      std::cout << "Parametro " << getTypeTxt(true)  << ": "
-        << id << "\n";
+    }
+    case read_comp_u:{
+      std::cout << " componente " << getTypeTxt(true) << " "
+        << getId();
       break;
-    }case comp:{
-      std::cout << "Componente " << getTypeTxt(true)  << ": "
-        << id;
+    }
+    case param_u:{
+      std::cout << "Parametro " << getTypeTxt(true) << ": "
+        << getId() << "\n";
       break;
-    }default: break;
+    }
+    case comp_u:{
+      std::cout << "Componente " << getTypeTxt(true) << ": "
+        << getId();
+      break;
+    }
+    default: break;
   }
-  if(next != NULL){
-    if(use==declr || use==comp){
-      auto tmp = dynamic_cast<Variable*>(next);
+
+  if(getNextComp() != nullptr)
+    getNextComp()->printTree();
+
+  auto next = getNext();
+  if(next != nullptr){
+    if(_use == declr_u || _use == comp_u){
+      auto tmp = Variable::cast(next);
       while(tmp != nullptr){
-        std::cout << ", " << tmp->id;
-        tmp = dynamic_cast<Variable*>(tmp->next);
+        std::cout << ", " << tmp->getId();
+        tmp = Variable::cast(tmp->getNext());
       }
     }else{
-      std::cout << (use==read?", ":"");
+      std::cout << (_use==read_u?", ":"");
       next->printTree();
     }
   }
 }
 
 void Array::printTree(){
-  switch (use) {
-    case declr:{
+  switch (_use) {
+    case declr_u:{
       std::cout << "Declaracao de arranjo " << getTypeTxt(true)
-        << " de tamanho " << size << ": " << id;
-        break;
-    }case attr:{
+        << " de tamanho " << getSize() << ": " << getId();
+      break;
+    }
+    case attr_u:{
       std::cout << "Atribuicao de valor para arranjo " <<
-        getTypeTxt(true)  << " " << id << " {+indice: ";
-      index->printTree();
+        getTypeTxt(true)  << " " << getId() << " {+indice: ";
+      _index->printTree();
       std::cout << "}";
       break;
-    }case read:{
-      std::cout << "arranjo " << getTypeTxt(true) << " " << id;
-      if(index != nullptr){
+    }
+    case read_u:{
+      std::cout << "arranjo " << getTypeTxt(true) << " " << getId();
+      if(_index != nullptr){
         std::cout << " {+indice: ";
-        index->printTree();
+        _index->printTree();
         std::cout << "}";
       }
       break;
-    }case read_comp:{
-        std::cout << " componente " << getTypeTxt(true)  << " "
-          << id;
-		if(index != nullptr){
-		  std::cout << " {+indice: ";
-		  index->printTree();
-		  std::cout << "}";
-	    }
-        break;
-    }case param:{
+    }
+    case read_comp_u:{
+      std::cout << " componente arranjo " << getTypeTxt(true) << " "
+          << getId();
+  		if(_index != nullptr){
+  		  std::cout << " {+indice: ";
+  		  _index->printTree();
+  		  std::cout << "}";
+  	  }
+      break;
+    }
+    case param_u:{
       std::cout << "Parametro arranjo " << getTypeTxt(true) << " de tamanho " <<
-        size << ": " << id << "\n";
+        getSize() << ": " << getId() << "\n";
       break;
-    }case comp:{
+    }
+    case comp_u:{
       std::cout << "Componente arranjo " << getTypeTxt(true) << " de tamanho " <<
-        size << ": " << id;
+        getSize() << ": " << getId();
       break;
-    }default: break;
+    }
+    default: break;
   }
-  if(next != NULL){
-    if(use==declr || use==comp){
-      auto tmp = dynamic_cast<Variable*>(next);
+
+  if(getNextComp() != nullptr)
+    getNextComp()->printTree();
+
+  auto next = getNext();
+  if(next != nullptr){
+    if(_use == declr_u || _use == comp_u){
+      auto tmp = Variable::cast(next);
       while(tmp != nullptr){
-        std::cout << ", " << tmp->id;
-        tmp = dynamic_cast<Variable*>(tmp->next);
+        std::cout << ", " << tmp->getId();
+        tmp = Variable::cast(tmp->getNext());
       }
     }else{
-      std::cout << (use==read&&type!=Types::composite_t?
-          ", ":"");
+      std::cout << (_use==read_u?", ":"");
       next->printTree();
     }
   }
 }
 
 void Function::printTree(){
-  switch (use) {
-    case declr:{
-      std::cout << "Declaracao de funcao " << Types::femType[type] <<
-        ": " << id << "\n+parametros:\n";
-      if(params!=nullptr)params->printTree();
+  switch (_use) {
+    case declr_u:{
+      std::cout << "Declaracao de funcao " << getTypeTxt(false) <<
+        ": " << getId() << "\n+parametros:\n";
+      if(_params!=nullptr) _params->printTree();
       std::cout << "Fim declaracao";
       break;
-    }case def:{
-      std::cout << "Definicao de funcao " << Types::femType[type] <<
-        ": " << id << "\n+parametros:\n";
-      if(params!=nullptr)params->printTree();
+    }
+    case def_u:{
+      std::cout << "Definicao de funcao " << getTypeTxt(false) <<
+        ": " << getId() << "\n+parametros:\n";
+      if(_params!=nullptr) _params->printTree();
       std::cout << "+corpo:\n";
-      block->printTree();
+      if(_block!=nullptr) _block->printTree();
       std::cout << "Fim definicao";
       break;
-    }case read:{
-      std::cout << "chamada de funcao " << Types::femType[type] <<
-        " " << id.c_str() << " {+parametros: ";
-
-      if(params != nullptr)
-        params->printTree();
+    }
+    case read_u:{
+      std::cout << "chamada de funcao " << getTypeTxt(false) <<
+        " " << getId() << " {+parametros: ";
+      if(_params != nullptr) _params->printTree();
       std::cout << "}";
       break;
-    }default: break;
+    }
+    default: break;
   }
+}
+
+void CompositeType::printTree(){
+  std::cout << "Definicao tipo: " << getId() <<
+    "\n+componentes: \n";
+  _block->printTree();
+  std::cout << "Fim definicao";
 }
 
 void Return::printTree(){
   std::cout << "Retorno de funcao: ";
-  expr->printTree();
+  _expr->printTree();
   // Coerção
-  if(funcType==Types::real_t && type==Types::integer_t)
+  if(_funcType==Types::real_t && getType()==Types::integer_t)
     std::cout << " para real";
-}
-
-void Block::printTree(){
-  for (Node* line: lines) {
-      line->printTree();
-      std::cout << std::endl;
-  }
-}
-
-void BinOp::printTree(){
-  auto l = left->type;
-  auto r = right->type;
-
-  switch (op) {
-    case Ops::assign:
-      left->printTree();
-      std::cout << ": ";
-      right->printTree();
-      // Coerção
-      if(l==Types::real_t && r==Types::integer_t)
-        std::cout << " para real";
-      break;
-    default:
-      std::cout << "(";
-      left->printTree();
-      // Coerção
-      if(r==Types::real_t && l==Types::integer_t)
-        std::cout << " para real";
-
-      std::cout << " (" << Ops::opName[op] << " ";
-      if(Ops::masculineOp[op]) std::cout << Types::mascType[type];
-      else std::cout << Types::femType[type];
-      std::cout << ") ";
-
-      right->printTree();
-      // Coerção
-      if(l==Types::real_t && r==Types::integer_t)
-        std::cout << " para real";
-      std::cout << ")";
-  }
-}
-
-void UniOp::printTree(){
-  std::cout << "(";
-  switch (op) {
-    case Ops::u_paren:
-      std::cout << "(abre parenteses) ";
-      right->printTree();
-      std::cout << " (fecha parenteses)";
-      break;
-    default:
-      std::cout << "(" << Ops::opName[op] << " ";
-      if(Ops::masculineOp[op]) std::cout << Types::mascType[type];
-      else std::cout << Types::femType[type];
-      std::cout << ") ";
-      right->printTree();
-      break;
-  }
-  std::cout << ")";
 }
 
 void CondExpr::printTree(){
   std::cout << "Expressao condicional\n+se: ";
-  cond->printTree();
+  _cond->printTree();
   std::cout << "\n+entao: \n";
-  thenBranch->printTree();
-  if(elseBranch != nullptr){
+  _thenBranch->printTree();
+  if(_elseBranch != nullptr){
     std::cout << "+senao: \n";
-    elseBranch->printTree();
+    _elseBranch->printTree();
   }
   std::cout << "Fim expressao condicional";
 }
 
 void WhileExpr::printTree(){
   std::cout << "Laco\n+enquanto: ";
-  cond->printTree();
+  _cond->printTree();
   std::cout << "\n+faca:\n";
-  block->printTree();
+  _block->printTree();
   std::cout << "Fim laco";
 }
 
-void CompositeType::printTree(){
-  std::cout << "Definicao tipo: " << id <<
-    "\n+componentes: \n";
-  block->printTree();
-  std::cout << "Fim definicao";
+void BinOp::printTree(){
+  auto l = _left->getType(true);
+  auto r = _right->getType(true);
+
+  switch (_op) {
+    case Ops::assign:{
+      _left->printTree();
+      std::cout << ": ";
+      _right->printTree();
+      // Coerção
+      if(l==Types::real_t && r==Types::integer_t)
+        std::cout << " para real";
+      break;
+    }
+    default:{
+      std::cout << "(";
+      _left->printTree();
+      // Coerção
+      if(r==Types::real_t && l==Types::integer_t)
+        std::cout << " para real";
+
+      std::cout << " (" << Ops::opName[_op] << " ";
+      if(Ops::masculineOp[_op]) std::cout << Types::mascType[getType()];
+      else std::cout << Types::femType[getType()];
+      std::cout << ") ";
+
+      _right->printTree();
+      // Coerção
+      if(l==Types::real_t && r==Types::integer_t)
+        std::cout << " para real";
+      std::cout << ")";
+      break;
+    }
+  }
 }
 
-// Outras funções
+void UniOp::printTree(){
+  std::cout << "(";
+  switch (_op) {
+    case Ops::u_paren:{
+      std::cout << "(abre parenteses) ";
+      _right->printTree();
+      std::cout << " (fecha parenteses)";
+      break;
+    }
+    default:{
+      std::cout << "(" << Ops::opName[_op] << " ";
+      if(Ops::masculineOp[_op]) std::cout << Types::mascType[getType()];
+      else std::cout << Types::femType[getType()];
+      std::cout << ") ";
+      _right->printTree();
+      break;
+    }
+  }
+  std::cout << ")";
+}
 
+// other funcs
+void Block::addLine(Node *line){
+  _lines.push_back(line);
+}
+
+bool Variable::hasCompType(){
+  return getType() == Types::composite_t;
+}
+
+/* @param checkNext     Checar se as variaveis 'next' são iguais tambem?
+ */
 bool Variable::equals(Variable *var, bool checkNext/*=false*/){
   if(var == nullptr || var->getKind() != this->getKind())
     return false;
 
-  auto next1 = (Variable*)next;
-  auto next2 = (Variable*)var->next;
-  return this->id==var->id && this->type==var->type &&
-    (checkNext ? (next1!=nullptr?next1->equals(next2):next2==nullptr) : true);
+  auto n1 = Variable::cast(this->getNext());
+  auto n2 = Variable::cast(var->getNext());
+  return this->_id==var->_id && this->getType()==var->getType() &&
+    (checkNext ? (n1!=nullptr?n1->equals(n2,checkNext):n2==nullptr) : true);
 }
 
+/* @param checkNext     Checar se as variaveis 'next' são iguais tambem?
+ */
 bool Array::equals(Variable *var, bool checkNext/*=false*/){
   bool ret = Variable::equals(var, checkNext);
 
-  auto ar = dynamic_cast<Array*>(var);
-  return ret && this->size==ar->size;
+  auto ar = Array::cast(var);
+  return ret && this->getSize()==ar->getSize();
 }
 
+/* @param checkNext     Checar se as variaveis 'next' são iguais tambem?
+ */
 bool Function::equals(Variable *var, bool checkNext/*=false*/){
   bool ret = Variable::equals(var, checkNext);
 
-  auto func = dynamic_cast<Function*>(var);
-  auto params1 = (Variable*)params;
-  auto params2 = (Variable*)func->params;
-  return ret && (params1!=nullptr?params1->equals(params2, true):params2==nullptr);
+  auto func = Function::cast(var);
+  auto p1 = Variable::cast(this->_params);
+  auto p2 = Variable::cast(func->_params);
+  return ret && (p1!=nullptr?p1->equals(p2,true):p2==nullptr);
 }
 
-void Array::setSize(int n){
-  if(n < 1){
-    n = 1;
-    Errors::print(Errors::array_size_lst_1, id.c_str());
-  }
-  size = n;
-}
-
-void Variable::setType(Types::Type t, std::string tId){
-  type = t;
-  if(t == Types::composite_t)
-    compType = tId;
-}
-
-const char* Variable::getTypeTxt(bool masc){
-  if(type!=Types::composite_t)
-    return masc ? Types::mascType[type] : Types::femType[type];
+// static funcs
+Block* Block::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == block_nt)
+    return dynamic_cast<Block*>(node);
   else
-    return compType.c_str();
+    return nullptr;
+}
+
+Value* Value::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == value_nt)
+    return dynamic_cast<Value*>(node);
+  else
+    return nullptr;
+}
+
+Variable* Variable::cast(Node *node){
+  if(node != nullptr){
+    auto type = node->getNodeType();
+    if(type==variable_nt||type==array_nt||type==function_nt)
+      return dynamic_cast<Variable*>(node);
+    else
+      return nullptr;
+  }else
+    return nullptr;
+}
+
+Array* Array::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == array_nt)
+    return dynamic_cast<Array*>(node);
+  else
+    return nullptr;
+}
+
+Function* Function::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == function_nt)
+    return dynamic_cast<Function*>(node);
+  else
+    return nullptr;
+}
+
+CompositeType* CompositeType::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == composite_type_nt)
+    return dynamic_cast<CompositeType*>(node);
+  else
+    return nullptr;
+}
+
+Return* Return::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == return_nt)
+    return dynamic_cast<Return*>(node);
+  else
+    return nullptr;
+}
+
+CondExpr* CondExpr::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == condexpr_nt)
+    return dynamic_cast<CondExpr*>(node);
+  else
+    return nullptr;
+}
+
+WhileExpr* WhileExpr::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == whileexpr_nt)
+    return dynamic_cast<WhileExpr*>(node);
+  else
+    return nullptr;
+}
+
+BinOp* BinOp::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == binop_nt)
+    return dynamic_cast<BinOp*>(node);
+  else
+    return nullptr;
+}
+
+UniOp* UniOp::cast(Node *node){
+  if(node != nullptr &&
+      node->getNodeType() == uniop_nt)
+    return dynamic_cast<UniOp*>(node);
+  else
+    return nullptr;
 }

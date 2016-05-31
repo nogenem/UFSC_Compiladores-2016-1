@@ -1,227 +1,366 @@
 #pragma once
 
 #include <vector>
-#include <iostream>
 #include <string>
-#include "st.hpp"
+#include <iostream>
 #include "util.hpp"
 
 namespace AST {
-
-// Possiveis usos de variaveis, arrays e funções
-enum Use { unknown, attr, declr, def, read, param, comp, read_comp };
 
 // Possiveis tipos de nodos
 enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
   function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt, whileexpr_nt,
   composite_type_nt };
 
+// Possiveis usos de variaveis, arrays e funções
+enum Use { unknown_u, attr_u, declr_u, def_u, param_u, comp_u, read_u, read_comp_u };
+
 class Node;
 
 typedef std::vector<Node*> NodeList; //List of ASTs
 
 class Node {
-  public:
-    Node():
-      next(nullptr),type(Types::unknown_t){}
-    Node(Types::Type type):
-      next(nullptr),type(type){}
-    Node(Node *next, Types::Type type):
-      next(next),type(type){}
+public:
+  // constructors
+  Node():
+    Node(nullptr, Types::unknown_t){}
+  Node(Node *next, Types::Type type):
+    _next(next), _type(type){}
 
-    virtual ~Node() {}
-    virtual void printTree(){}
-    virtual NodeType getNodeType(){return node_nt;}
+  // destructors
+  virtual ~Node();
 
-    // Next nodo, usado em variaveis,
-    // arrays e lista de parametros para funções
-    Node *next;
-    // Tipo do nodo
-    Types::Type type;
+  // other funcs
+  virtual void printTree(){}
+  virtual NodeType getNodeType(){return node_nt;}
+
+  // getters
+  Node* getNext(){return _next;}
+  virtual Types::Type getType(bool checkComps=false);
+  virtual const char* getTypeTxt(bool masc);
+  // setters
+  void setNext(Node *next){_next=next;}
+  void setType(Types::Type type){_type=type;}
+protected:
+  Node *_next;
+  Types::Type _type;
 };
 
-class Block : public Node{
-  public:
-    Block(ST::SymbolTable *symtab):
-      symtab(symtab){}
-    Block(): symtab(nullptr) {}
+class Block : public Node {
+public:
+  // constructors
+  Block(){}
 
-    void printTree();
-    NodeType getNodeType(){return block_nt;}
+  // destructors
+  ~Block();
 
-    // Lista de linhas do block
-    NodeList lines;
-    // 'Escopo'
-    ST::SymbolTable *symtab;
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return block_nt;}
+
+  // static funcs
+  static Block* cast(Node *node);
+
+  // list funcs
+  void addLine(Node *line);
+
+  // getters
+  NodeList& getLines(){return _lines;}
+protected:
+  NodeList _lines;
 };
 
 class Value : public Node {
-  public:
-    Value(std::string n, Types::Type type):
-      n(n), Node(type){}
+public:
+  // constructors
+  Value(std::string n, Types::Type type):
+    Value(n,nullptr,type){}
+  Value(std::string n, Node *next, Types::Type type):
+    _n(n), Node(next,type){}
 
-    void printTree();
-    NodeType getNodeType(){return value_nt;}
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return value_nt;}
 
-    // Valor [numero,TRUE,FALSE]
-    std::string n;
+  // static funcs
+  static Value* cast(Node *node);
+
+  // getters
+  const char* getN(){return _n.c_str();}
+protected:
+  // valor [numero, TRUE, FALSE]
+  std::string _n;
 };
 
 class Variable : public Node {
-  public:
-    Variable(std::string id):
-      Variable(id,nullptr,unknown){}
-    Variable(std::string id, Types::Type type):
-      Variable(id,nullptr,unknown,type){}
-    Variable(std::string id, Node *next):
-      Variable(id,next,unknown){}
-    Variable(std::string id, Node *next, Use use,
-      Types::Type type=Types::unknown_t):
-      id(id), use(use), Node(next,type){}
-    Variable(std::string id, Node *next, Use use,
-      std::string compType, Types::Type type=Types::unknown_t):
-      id(id), use(use), compType(compType), Node(next,type){}
+public:
+  // constructors
+  // Construtor dumb usado para gambiarra no parser.y
+  Variable(std::string id, Types::Type type):
+    _id(id), _use(unknown_u), _compType(""), _nextComp(nullptr),
+    Node(nullptr,type){}
 
-    void printTree();
-    virtual NodeType getNodeType(){return variable_nt;}
+  Variable(std::string id, Use use, std::string compType, Node *nextComp,
+    Node *next, Types::Type type=Types::unknown_t):
+    _id(id), _use(use), _compType(compType), _nextComp(nextComp),
+    Node(next,type){}
 
-    void setType(Types::Type t, std::string tId);
-    const char* getTypeTxt(bool masc);
-    virtual Kinds::Kind getKind(){return Kinds::variable_t;}
-    virtual bool equals(Variable *var, bool checkNext=false);
+  // other funcs
+  virtual void printTree();
+  virtual NodeType getNodeType(){return variable_nt;}
+  virtual Kinds::Kind getKind(){return Kinds::variable_t;}
+  virtual bool equals(Variable *var, bool checkNext=false);
+  bool hasCompType();
 
-    std::string id;
-    // Para que a variavel vai ser usada
-    Use use;
-    // Tipo composto
-    std::string compType="";
+  // static funcs
+  static Variable* cast(Node *node);
+
+  // getters
+  const char* getId(){return _id.c_str();}
+  Use getUse(){return _use;}
+  std::string getCompType(){return _compType;}
+  Node* getNextComp(){return _nextComp;}
+  Types::Type getType(bool checkComps=false);
+  const char* getTypeTxt(bool masc);
+  // setters
+  void setId(std::string id){_id=id;}
+  void setUse(Use use){_use=use;}
+  void setCompType(std::string compType){_compType=compType;}
+  void setNextComp(Node *node){_nextComp=node;}
+  void setType(Types::Type type, std::string compType);
+protected:
+  // nome da var
+  std::string _id;
+  // aonde ela esta sendo usada
+  Use _use;
+  // tipo complexo da var
+  std::string _compType;
+  // next componente [p.x.y]
+  Node *_nextComp;
 };
 
 class Array : public Variable {
-  public:
-    Array(std::string id, Node *index, Types::Type type):
-      index(index), Variable(id, type){}//construtor dumb
+public:
+  // constructors
+  // Construtor dumb usado para gambiarra no parser.y
+  Array(Node *index, std::string id, Types::Type type):
+      _index(index), Variable(id, type){}
 
-    Array(std::string id, Node *index):
-      Array(id,nullptr,index,unknown,1,"",Types::unknown_t){}
-    Array(std::string id, Node *next, Node *index):
-      Array(id,next,index,unknown,1,"",Types::unknown_t){}
-    Array(std::string id, Node *next, Use use):
-      Array(id,next,nullptr,use,1,"",Types::unknown_t){}
-    Array(std::string id, Node *index, Use use, Types::Type type):
-      Array(id,nullptr,index,use,1,"",type){}
-    Array(std::string id, Node *next, Use use,
-      int aSize, Types::Type type):
-      Array(id,next,nullptr,use,aSize,"",type){}
-    Array(std::string id, Node *next, Node *i,
-      Use use, int aSize, std::string compType, Types::Type type);
+  Array(Node *index, int size, std::string id, Use use,
+    std::string compType, Node *nextComp, Node *next,
+    Types::Type type=Types::unknown_t);
 
-    void printTree();
-    NodeType getNodeType(){return array_nt;}
+  // destructors
+  ~Array();
 
-    void setSize(int n);
-    Kinds::Kind getKind(){return Kinds::array_t;}
-    bool equals(Variable *var, bool checkNext=false);
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return array_nt;}
+  Kinds::Kind getKind(){return Kinds::array_t;}
+  bool equals(Variable *var, bool checkNext=false);
 
-    // Indice do arranjo
-    Node *index;
-    // Tamanho do arranjo
-    int size=1;
+  // static funcs
+  static Array* cast(Node *node);
+
+  // getters
+  Node* getIndex(){return _index;}
+  int getSize(){return _size;}
+  // setters
+  void setIndex(Node *index){_index=index;}
+  void setSize(int size);
+protected:
+  Node *_index;
+  int _size;
 };
 
 class Function : public Variable {
-  public:
-    Function(std::string id, Node *params, Node *block, Use use,
-      Types::Type type=Types::unknown_t);
+public:
+  // constructors
+  Function(Node *params, Node *block, std::string id, Use use,
+    std::string compType, Node *nextComp, Node *next,
+    Types::Type type=Types::unknown_t);
 
-    void printTree();
-    NodeType getNodeType(){return function_nt;}
+  // destructors
+  ~Function();
 
-    Kinds::Kind getKind(){return Kinds::function_t;}
-    bool equals(Variable *var, bool checkNext=false);
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return function_nt;}
+  Kinds::Kind getKind(){return Kinds::function_t;}
+  bool equals(Variable *var, bool checkNext=false);
 
-    // Parametros da função, tanto na declaração,
-    // definição e uso da função
-    Node *params;
-    // Corpo da função
-    Node *block;
+  // static funcs
+  static Function* cast(Node *node);
+
+  // getters
+  Node* getParams(){return _params;}
+  Node* getBlock(){return _block;}
+  // setters
+  void setParams(Node *params){_params=params;}
+  void setBlock(Node *block){_block=block;}
+protected:
+  Node *_params;
+  Node *_block;
 };
 
 class CompositeType : public Node {
-  public:
-    CompositeType(std::string id, Node *block):
-      id(id), block(block){}
+public:
+  // constructors
+  CompositeType(std::string id, Node *block):
+    _id(id), _block(block){}
 
-    void printTree();
-    NodeType getNodeType(){return composite_type_nt;}
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return composite_type_nt;}
+  Kinds::Kind getKind(){return Kinds::type_t;}
 
-    Kinds::Kind getKind(){return Kinds::type_t;}
+  // static funcs
+  static CompositeType* cast(Node *node);
 
-    std::string id;
-    Node *block;
+  // getters
+  const char* getId(){return _id.c_str();}
+  Node* getBlock(){return _block;}
+  // setters
+  void setId(std::string id){_id=id;}
+  void setBlock(Node *block){_block=block;}
+protected:
+  std::string _id;
+  Node *_block;
 };
 
 class Return : public Node {
-  public:
-    Return(Node *expr):
-      expr(expr),Node(expr->type){}
+public:
+  // constructors
+  Return(Node *expr):
+    _expr(expr), _funcType(Types::unknown_t),
+    Node(nullptr,expr->getType()){}
 
-    void printTree();
-    NodeType getNodeType(){return return_nt;}
+  // destructors
+  ~Return();
 
-    // Expresão após o 'return'
-    Node *expr;
-    // Tipo da função aonde este 'return' esta
-    // (usado para verificar se o retorno esta correto)
-    Types::Type funcType=Types::unknown_t;
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return return_nt;}
+
+  // static funcs
+  static Return* cast(Node *node);
+
+  // getters
+  Node* getExpr(){return _expr;}
+  Types::Type getFuncType(){return _funcType;}
+  // setters
+  void setExpr(Node *expr){_expr=expr;}
+  void setFuncType(Types::Type funcType){_funcType=funcType;}
+protected:
+  Node *_expr;
+  Types::Type _funcType;
 };
 
 class CondExpr : public Node {
-  public:
-    CondExpr(Node *cond, Node *thenBranch, Node *elseBranch);
+public:
+  // constructors
+  CondExpr(Node *cond, Node *thenBranch, Node *elseBranch);
 
-    void printTree();
-    NodeType getNodeType(){return condexpr_nt;}
+  // destructors
+  ~CondExpr();
 
-    // Condição, ramo then e ramo else do IF
-    Node *cond, *thenBranch, *elseBranch;
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return condexpr_nt;}
+
+  // static funcs
+  static CondExpr* cast(Node *node);
+
+  // getters
+  Node* getCond(){return _cond;}
+  Node* getThenBranch(){return _thenBranch;}
+  Node* getElseBranch(){return _elseBranch;}
+  // setters
+  void setCond(Node *cond){_cond=cond;}
+  void setThenBranch(Node *thenBranch){_thenBranch=thenBranch;}
+  void setElseBranch(Node *elseBranch){_elseBranch=elseBranch;}
+protected:
+  Node *_cond, *_thenBranch, *_elseBranch;
 };
 
 class WhileExpr : public Node {
-  public:
-    WhileExpr(Node *cond, Node *block);
+public:
+  // constructors
+  WhileExpr(Node *cond, Node *block);
 
-    void printTree();
-    NodeType getNodeType(){return whileexpr_nt;}
+  // destructors
+  ~WhileExpr();
 
-    // Condição e corpo do While
-    Node *cond, *block;
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return whileexpr_nt;}
+
+  // static funcs
+  static WhileExpr* cast(Node *node);
+
+  // getters
+  Node* getCond(){return _cond;}
+  Node* getBlock(){return _block;}
+  // setters
+  void setCond(Node *cond){_cond=cond;}
+  void setBlock(Node *block){_block=block;}
+protected:
+  Node *_cond, *_block;
 };
 
 class BinOp : public Node {
-  public:
-    BinOp(Node *left, Ops::Operation op, Node *right);
+public:
+  // constructors
+  BinOp(Node *left, Ops::Operation op, Node *right);
 
-    void printTree();
-    NodeType getNodeType(){return binop_nt;}
+  // destructors
+  ~BinOp();
 
-    // Lado esquerdo e direito da operação binaria
-    Node *left, *right;
-    // Operação
-    Ops::Operation op;
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return binop_nt;}
+
+  // static funcs
+  static BinOp* cast(Node *node);
+
+  // getters
+  Node* getLeft(bool checkParens=false);
+  Ops::Operation getOp(){return _op;}
+  Node* getRight(bool checkParens=false);
+  // setters
+  void setLeft(Node *left){_left=left;}
+  void setOp(Ops::Operation op){_op=op;}
+  void setRight(Node *right){_right=right;}
+protected:
+  Node *_left;
+  Ops::Operation _op;
+  Node *_right;
 };
 
 class UniOp : public Node {
-  public:
-    UniOp(Ops::Operation op, Node *right);
+public:
+  // constructors
+  UniOp(Ops::Operation op, Node *right);
 
-    void printTree();
-    NodeType getNodeType(){return uniop_nt;}
+  // destructors
+  ~UniOp();
 
-    // Lado direito da operação unária
-    Node *right;
-    // Operação
-    Ops::Operation op;
+  // other funcs
+  void printTree();
+  NodeType getNodeType(){return uniop_nt;}
+
+  // static funcs
+  static UniOp* cast(Node *node);
+
+  // getters
+  Ops::Operation getOp(){return _op;}
+  Node* getRight(bool checkParens=false);
+  // setters
+  void setOp(Ops::Operation op){_op=op;}
+  void setRight(Node *right){_right=right;}
+protected:
+  Ops::Operation _op;
+  Node *_right;
 };
 
 }

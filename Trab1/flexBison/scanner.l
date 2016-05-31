@@ -1,8 +1,7 @@
 %{
 #include <string>
-#include "ast.hpp"
-#include "st.hpp"
 #include "util.hpp"
+#include "ast.hpp"
 #include "parser.hpp"
 
 extern int yylineno;

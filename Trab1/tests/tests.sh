@@ -5,9 +5,29 @@ OUTPUTS=expected/output
 ERRORS=expected/error
 EXE=myparse
 
+# use: sh tests.sh u v x y
+# para controlar os indices dos FORs
+
+minV=0 #min version [0-5]
+if [ ! -z $1 ]; then
+	minV=$1
+fi
+maxV=4 #max version [0-5]
+if [ ! -z $2 ]; then
+	maxV=$2
+fi
+minI=1 #min input [1-x]
+if [ ! -z $3 ]; then
+	minI=$3
+fi
+maxI=5 #max input [1-y]
+if [ ! -z $4 ]; then
+	maxI=$4
+fi
+
 function test {
-	for i in {0..4}; do
-		for j in {0..5}; do
+	for (( i=minV; i <= maxV; i++ )) do
+		for (( j=minI; j <= maxI; j++ )) do
 			input="input${j}_v1.${i}"
 			if [ -s $INPUTS/$input ]; then
 				output="output${j}_v1.${i}"

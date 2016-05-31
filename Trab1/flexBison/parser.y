@@ -4,7 +4,7 @@
 #include "util.hpp"
 
 AST::Block *programRoot; /* the root node of our program AST:: */
-ST::SymbolTable *symtab = new ST::SymbolTable(NULL);  /* main symbol table */
+ST::SymbolTable *symtab = new ST::SymbolTable(nullptr);  /* main symbol table */
 
 /* ideia temporaria para guardar
  *  os ultimos dados lidos
@@ -33,17 +33,16 @@ void handlerDParams(AST::Node *&r, std::string id, AST::Node *type, AST::Node *n
 
 /*
   ASK:
-    Terminar SymbolTable::assignVariable
+    test input3_v1.2
 
   TODO:
-    arrumar construtores
-      Variable => checar se type=composto antes de setar variable compType
-      Var e Array => remover construtores dumbs e fazer checagem de tipo do index
-        usando 'syntaxError' como parametro
-    verificar IFS do _useVariable
+    declFunction -> redeclaration ? [st.cpp 73]
 
-    tratar os warning!? [problema ta no 'cond', 'def' e um desconhecido]
-    arrumar problema test((v)+2); !?
+  OBS:
+    test input4_v1.0
+      ordem trocada
+    test v1.2
+      Parametro -> parametro
 */
 %}
 
@@ -88,9 +87,6 @@ void handlerDParams(AST::Node *&r, std::string id, AST::Node *type, AST::Node *n
 %left '+' '-'
 %left '*' '/'
 %nonassoc U_MINUS
-%nonassoc ']'
-%nonassoc ':'
-%nonassoc '.' ASSIGN_OPT
 %nonassoc error
 
 /* Starting rule
@@ -102,19 +98,19 @@ void handlerDParams(AST::Node *&r, std::string id, AST::Node *type, AST::Node *n
 program : lines { programRoot = $1; symtab->checkFuncs(); }
         ;
 
-lines   : line        { $$ = new AST::Block(symtab);
-                        if($1 != NULL) $$->lines.push_back($1); }
-        | lines line  { if($2 != NULL) $1->lines.push_back($2); }
+lines   : line        { $$ = new AST::Block();
+                        if($1 != NULL) $$->addLine($1); }
+        | lines line  { if($2 != NULL) $1->addLine($2); }
         ;
 
-flines  : fline         { $$ = new AST::Block(symtab);
-                          if($1 != NULL) $$->lines.push_back($1); }
-        | flines fline  { if($2 != NULL) $1->lines.push_back($2); }
+flines  : fline         { $$ = new AST::Block();
+                          if($1 != NULL) $$->addLine($1); }
+        | flines fline  { if($2 != NULL) $1->addLine($2); }
         ;
 
-tlines  : tline         { $$ = new AST::Block(symtab);
-                          if($1 != NULL) $$->lines.push_back($1); }
-        | tlines tline  { if($2 != NULL) $1->lines.push_back($2); }
+tlines  : tline         { $$ = new AST::Block();
+                          if($1 != NULL) $$->addLine($1); }
+        | tlines tline  { if($2 != NULL) $1->addLine($2); }
         ;
 
 line    : assign ';'              { $$ = $1; }
@@ -149,11 +145,6 @@ assign  : complist ASSIGN_OPT expr
               $$ = new AST::BinOp($1, Ops::assign, $3); }
         ;
 
-/* lista de vars para tipos compostos */
-complist  : idORarr2              { $$ = $1; }
-          | idORarr2 '.' complist { $$ = $1; $$->next = $3; }
-          ;
-
 /* declaração */
 decl    : idORarr ':' varlist   { handlerDecl($$, $3); }
         | tORtarr ':' varlist   { handlerDecl($$, $3); }
@@ -161,20 +152,21 @@ decl    : idORarr ':' varlist   { handlerDecl($$, $3); }
 
 /* declaração de função */
 fdecl   : vartype ':' ID_V '(' dparamlist ')'
-            { $$ = symtab->declFunction($3, $5, $1); }
+            { $$ = symtab->declFunction($5, $3, $1); }
         ;
 
 def     : FUN_T vartype ':' defid '(' dparamlist ')' fnewscope flines END_T
             { symtab = symtab->getPrevious();
-              $$ = symtab->defFunction($4, $6, $9, $2); }
+              $$ = symtab->defFunction($6, $9, $4, $2); }
         | FUN_T vartype ':' defid '(' dparamlist ')' END_T
-            { $$ = symtab->defFunction($4, $6, new AST::Block(), $2); }
+            { $$ = symtab->defFunction($6, new AST::Block(), $4, $2); }
         | TYPE_T ':' ID_V newscope insidetype tlines END_T
-            { symtab = symtab->getPrevious();
+            { auto st = symtab;
+              symtab = symtab->getPrevious();
               insideType = false;
-              $$ = symtab->defCompType($3, $6); }
+              $$ = symtab->defCompType($3, $6, st); }
         | TYPE_T ':' ID_V error END_T
-            { yyerrok; $$ = NULL; }/* shift/reduce conflict [ñ newscope] */
+            { yyerrok; $$ = NULL; }/* shift/reduce conflict */
         ;
 
 cond    : expr THEN_T newscope flines END_T
@@ -196,15 +188,20 @@ enqt    : expr DO_T newscope flines END_T
             { yyerrok; $$ = NULL; }/* shift/reduce conflict [ñ newscope] */
         ;
 
+/* lista de vars para tipos compostos */
+complist  : idORarr2              { $$ = $1; }
+          | idORarr2 '.' complist { $$ = $1; AST::Variable::cast($$)->setNextComp($3); }
+          ;
+
 /* id ou array geral, soh salva os valores */
 idORarr : ID_V              { isArray = false; last.type = Types::composite_t;
                               last.compType = $1; last.index = NULL; last.size = -1; }
         | ID_V '[' expr ']' { handlerIDorARR($1, $3); }
         ;
 
-/* id ou array para atribuicao/lista de params, gera os nodos */
-idORarr2  : ID_V              { $$ = new AST::Variable($1); }
-          | ID_V '[' expr ']' { $$ = new AST::Array($1, $3, Types::unknown_t); }
+/* id ou array para atribuicao/lista de params, gera os nodos dumb */
+idORarr2  : ID_V              { $$ = new AST::Variable($1, Types::composite_t); }
+          | ID_V '[' expr ']' { $$ = new AST::Array($3, $1, Types::composite_t); }
           ;
 
 /* type ou type array */
@@ -212,9 +209,9 @@ tORtarr : vartype               { isArray = false; last.size = -1; }
         | vartype '[' expr ']'  { handlerTorTARR($3); }
         ;
 
-/* type ou type array para lista de params, gera os nodos */
+/* type ou type array para lista de params, gera os nodos dumb */
 tORtarr2  : vartype               { $$ = new AST::Variable("", $1); }
-          | vartype '[' expr ']'  { $$ = new AST::Array("", $3, $1); }
+          | vartype '[' expr ']'  { $$ = new AST::Array($3, "", $1); }
           ;
 
 /* tipos */
@@ -253,7 +250,7 @@ term    : BOOL_V            { $$ = new AST::Value($1, Types::bool_t); }
         | REAL_V            { $$ = new AST::Value($1, Types::real_t); }
         | complist          { $$ = symtab->useVariable($1, useOfFunc); }
         | ID_V '(' useoffunc uparamlist ')'
-            { $$ = symtab->useFunc($1, $4); useOfFunc = false; }
+            { $$ = symtab->useFunc($4, $1); useOfFunc = false; }
         ;
 
 dparamlist  :             { $$ = NULL; last.params = NULL; }
@@ -264,9 +261,9 @@ dparamlist2 : idORarr2 ':' ID_V
                 { handlerDParams($$, $3, $1, nullptr); }
             | tORtarr2 ':' ID_V
                 { handlerDParams($$, $3, $1, nullptr); }
-            | idORarr2 ':' ID_V ',' dparamlist
+            | idORarr2 ':' ID_V ',' dparamlist2
                 { handlerDParams($$, $3, $1, $5); }
-            | tORtarr2 ':' ID_V ',' dparamlist
+            | tORtarr2 ':' ID_V ',' dparamlist2
                 { handlerDParams($$, $3, $1, $5); }
             ;
 
@@ -274,8 +271,8 @@ uparamlist  :             { $$ = NULL; }
             | uparamlist2 { $$ = $1; }
             ;
 
-uparamlist2 : expr                { $$ = $1; }
-            | expr ',' uparamlist { $$ = $1; $$->next = $3; }
+uparamlist2 : expr                 { $$ = $1; }
+            | expr ',' uparamlist2 { $$ = $1; $$->setNext($3); }
             ;
 
 newscope    : { symtab = new ST::SymbolTable(symtab); }
@@ -283,7 +280,7 @@ newscope    : { symtab = new ST::SymbolTable(symtab); }
 
 fnewscope   : { auto symbol = symtab->getSymbol(last.id);
                 symtab = new ST::SymbolTable(symtab);
-                symtab->addFuncParams(symbol!=nullptr?symbol->params:nullptr,
+                symtab->addFuncParams(symbol!=nullptr?symbol->getParams():nullptr,
                   last.params); }
             ;
 
@@ -308,9 +305,10 @@ void handlerIDorARR(std::string id, AST::Node *index){
   last.compType = id;
   last.index = index;
 
-  if(index->getNodeType() == AST::value_nt &&
-    index->type == Types::integer_t){
-    last.size = std::atoi(dynamic_cast<AST::Value*>(index)->n.c_str());
+  auto val = AST::Value::cast(index);
+  if(val != nullptr &&
+      val->getType() == Types::integer_t){
+    last.size = std::atoi(val->getN());
   }else{
     last.size = -1;
     syntaxError = true;
@@ -322,9 +320,10 @@ void handlerTorTARR(AST::Node *index){
   last.compType = "";
   last.index = nullptr;
 
-  if(index->getNodeType() == AST::value_nt &&
-    index->type == Types::integer_t){
-    last.size = std::atoi(dynamic_cast<AST::Value*>(index)->n.c_str());
+  auto val = AST::Value::cast(index);
+  if(val != nullptr &&
+      val->getType() == Types::integer_t){
+    last.size = std::atoi(val->getN());
   }else{
     last.size = -1;
     syntaxError = true;
@@ -348,22 +347,25 @@ void handlerDecl(AST::Node *&r, AST::Node *vars){
 }
 
 void handlerDParams(AST::Node *&r, std::string id, AST::Node *type, AST::Node *next){
-  if(type->getNodeType() == AST::array_nt){
-    auto arr = dynamic_cast<AST::Array*>(type);
+  auto arr = AST::Array::cast(type);
+  if(arr != nullptr){
     int size = -1;
-    if(arr->index->getNodeType() == AST::value_nt &&
-      arr->index->type == Types::integer_t){
-      size = std::atoi(dynamic_cast<AST::Value*>(arr->index)->n.c_str());
+    auto val = AST::Value::cast(arr->getIndex());
+    if(val != nullptr &&
+        val->getType() == Types::integer_t){
+      size = std::atoi(val->getN());
     }
-    if(size != -1)
-      r = new AST::Array(id, next, NULL, AST::param, size, arr->id, arr->type);
-    else{
+    if(size != -1){
+      r = new AST::Array(nullptr, size, id, AST::param_u,
+        arr->getId(), nullptr, next, arr->getType());
+    }else{
       r = next;
       Errors::print(Errors::syntax_error);
     }
   }else{
-    auto var = dynamic_cast<AST::Variable*>(type);
-    r = new AST::Variable(id, next, AST::param, var->id, var->type);
+    auto var = AST::Variable::cast(type);
+    r = new AST::Variable(id, AST::param_u, var->getId(), nullptr,
+      next, var->getType());
   }
   delete type;
 }
