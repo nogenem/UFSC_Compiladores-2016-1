@@ -28,7 +28,7 @@ Function::Function(Node *params, Node *block, std::string id, Use use,
   _params(params), _block(block),
   Variable(id,use,compType,nextComp,next,type){
 
-  // Verifica se tem pelo menos um return no corpo
+  //  Verifica se tem pelo menos um return no corpo
   // da função e verifica se o tipo do return
   // bate com o da função
   Types::Type ftype = getType(), rtype = Types::unknown_t;
@@ -57,6 +57,7 @@ Function::Function(Node *params, Node *block, std::string id, Use use,
 CondExpr::CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
   _cond(cond), _thenBranch(thenBranch), _elseBranch(elseBranch){
 
+  // Verifica se o tipo da condição é booleano
   if(_cond->getType() != Types::bool_t){
     Errors::print(Errors::op_wrong_type1, "enquanto",
         Types::mascType[Types::bool_t], Types::mascType[_cond->getType()]);
@@ -66,6 +67,7 @@ CondExpr::CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
 WhileExpr::WhileExpr(Node *cond, Node *block):
   _cond(cond), _block(block){
 
+  // Verifica se o tipo da condição é booleano
   if(_cond->getType() != Types::bool_t){
     Errors::print(Errors::op_wrong_type1, "teste",
         Types::mascType[Types::bool_t], Types::mascType[_cond->getType()]);
@@ -75,7 +77,7 @@ WhileExpr::WhileExpr(Node *cond, Node *block):
 BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
   _left(left), _op(op), _right(right){
 
-  // verificações se o lado esquerdo ou direito
+  //  Verificações se o lado esquerdo ou direito
   // da operação é um arranjo, gambiarra por causa
   // dos parametros para uso de funções...
   if(_op != Ops::assign){
@@ -163,7 +165,7 @@ BinOp::BinOp(Node *left, Ops::Operation op, Node *right):
 UniOp::UniOp(Ops::Operation op, Node *right):
   _op(op), _right(right){
 
-  // verificações se o lado direito
+  //  Verificações se o lado direito
   // da operação é um arranjo, gambiarra por causa
   // dos parametros para uso de funções...
   if(_op != Ops::u_paren){

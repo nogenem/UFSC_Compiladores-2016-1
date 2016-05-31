@@ -27,6 +27,10 @@ Symbol* Symbol::copy(){
   return s;
 }
 
+/*  Inicializa todos os componentes do tipo
+ * complexo, caso este simbolo seja de uma
+ * variavel/arranjo que tenha tipo complexo
+ */
 void Symbol::initializeAllComps(){
   if(_typeTable != nullptr){
     _typeTable->initializeAllVars();
@@ -34,6 +38,8 @@ void Symbol::initializeAllComps(){
 }
 
 // other funcs [SymbolTable]
+/* Verifica se o tipo do indice é inteiro
+ */
 void SymbolTable::_checkIndex(AST::Node *node){
   auto tmp = AST::Variable::cast(node);
   AST::Array *arr = nullptr;
@@ -65,7 +71,7 @@ void SymbolTable::assignVariable(AST::Node *node){
     }else{//var/array de tipo composto
       tmp->setType(symbol->getType(), symbol->getCompType());
       auto tmp2 = AST::Variable::cast(tmp->getNextComp());
-      // percorre os componentes setando seus tipos e uso
+      // Percorre os componentes setando seus tipos e uso
       //  e fazendo as devidas verificações
       while(tmp2 != nullptr){
         symbol = symbol->getTypeTable()!=nullptr?
@@ -101,6 +107,7 @@ AST::Node* SymbolTable::declFunction(AST::Node *params, std::string id,
     else
       Errors::print(Errors::redefinition,
         Kinds::kindName[symbol->getKind()], id.c_str());
+    type = Types::unknown_t;
   }else{
     Symbol *entry = new Symbol(params, type);
     addSymbol(id, entry);
@@ -155,6 +162,8 @@ AST::Node* SymbolTable::defCompType(std::string id, AST::Node *block, SymbolTabl
   return new AST::CompositeType(id, block);
 }
 
+/* @param insideType    Estou dentro do corpo de um tipo?
+ */
 AST::Node* SymbolTable::newVariable(std::string id, AST::Node *next, bool isArray,
   bool insideType/*=false*/){
 
@@ -175,17 +184,19 @@ AST::Node* SymbolTable::newVariable(std::string id, AST::Node *next, bool isArra
       "", nullptr, next, Types::unknown_t);
 }
 
-/* @param 'useOfFunc'   significa que a variavel esta sendo usada
+/* @param useOfFunc   significa que a variavel esta sendo usada
  *  no uso de uma função. Ex: c := soma(a, b);
  * Isto é uma gambiarra para que possa ser usado arranjos
  *  como parametros de funções
-*/
+ */
 AST::Node* SymbolTable::useVariable(AST::Node *node, bool useOfFunc){
   if(node->getNodeType() == AST::variable_nt)
     node = this->_useVariable(node, useOfFunc);
   else
     node = this->_useArray(node, useOfFunc);
 
+  // Faz as verificações dos componentes de tipos compostos
+  // Ex: a[1].x := 5; (verifica se 'a' pode ter componente 'x')
   AST::Variable* tmp1 = AST::Variable::cast(node);
   if(tmp1->getNextComp() != nullptr){
     auto tmp2 = AST::Variable::cast(tmp1->getNextComp());
@@ -203,13 +214,14 @@ AST::Node* SymbolTable::useVariable(AST::Node *node, bool useOfFunc){
         Errors::print(Errors::type_wrong_comp, tmp1->getTypeTxt(true), tmp2->getId());
       }
     }
+    //  Chama esta mesma função para todos os componentes só que
+    // usando a tabela de simbolos do tipo complexo
     auto symbol = getSymbol(tmp1->getId());
     if(symbol != nullptr && symbol->getTypeTable()!=nullptr){
       tmp1->setNextComp(symbol->getTypeTable()->useVariable(tmp1->getNextComp(), useOfFunc));
       AST::Variable::cast(tmp1->getNextComp())->setUse(AST::read_comp_u);
     }
   }
-
   return node;
 }
 
@@ -236,6 +248,8 @@ AST::Node* SymbolTable::_useVariable(AST::Node *node, bool useOfFunc){
   }else{
     var->setType(Types::unknown_t, "");
   }
+  // Verifica se é passagem de arranjo para função
+  // Ex: int[2]: a; int: b; b := test(a);
   if(useOfFunc && symbol != nullptr && symbol->getKind() == Kinds::array_t
       && var->getNextComp() == nullptr){
     auto arr = new AST::Array(nullptr, symbol->getArraySize(), var->getId(),
@@ -256,10 +270,11 @@ AST::Node* SymbolTable::_useArray(AST::Node *node, bool useOfFunc){
 
   auto symbol = getSymbol(arr->getId());
   if(symbol != nullptr){
-    if(symbol->getKind() != Kinds::array_t)
+    if(symbol->getKind() != Kinds::array_t){
       Errors::print(Errors::wrong_use, Kinds::kindName[symbol->getKind()],
         arr->getId(), Kinds::kindName[Kinds::array_t]);
-    else{
+      arr->setType(Types::unknown_t, "");
+    }else{
       arr->setType(symbol->getType(), symbol->getCompType());
       arr->setSize(symbol->getArraySize());
     }
@@ -317,6 +332,8 @@ AST::Node* SymbolTable::useFunc(AST::Node *params, std::string id){
       }
       ++nu; uparams = uparams->getNext();
     }
+    //  Caso tenha mais parametros declarados
+    // do que passados para a função
     while(dparams != nullptr){
       ++nd; dparams = dparams->getNext();
     }
@@ -363,11 +380,14 @@ void SymbolTable::addFuncParams(AST::Node *oldParams, AST::Node *newParams){
   }
 }
 
+/*  Verifica se todas as funções declaradas foram
+ * tambem definidas
+ */
 void SymbolTable::checkFuncs(){
   for(const auto& iter : _entryList){
     const auto& symbol = iter.second;
     if(symbol->getKind() == Kinds::function_t && !symbol->isInitialized())
-      Errors::print(Errors::func_never_declared, iter.first.c_str());
+      Errors::print(Errors::func_never_defined, iter.first.c_str());
   }
 }
 
@@ -420,9 +440,8 @@ void SymbolTable::setArraySize(AST::Node *node, int size){
  */
 bool SymbolTable::checkId(std::string id, bool creation/*=false*/){
   bool result = _entryList.find(id) != _entryList.end();
-  // Caso seja a declaração de uma variavel
-  // só é preciso checar o primeiro nivel
-  // do escopo
+  //  Caso seja a declaração de uma variavel
+  // só é preciso checar o primeiro nivel do escopo
   if(creation)
     return result;
   return result ? result :

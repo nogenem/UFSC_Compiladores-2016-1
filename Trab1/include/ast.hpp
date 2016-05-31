@@ -42,7 +42,10 @@ public:
   void setNext(Node *next){_next=next;}
   void setType(Types::Type type){_type=type;}
 protected:
+  // Proximo nodo, usado na declaração de variaveis,
+  //  lista de parametros e afins
   Node *_next;
+  // Tipo do nodo
   Types::Type _type;
 };
 
@@ -67,6 +70,7 @@ public:
   // getters
   NodeList& getLines(){return _lines;}
 protected:
+  // Lista de linhas do bloco
   NodeList _lines;
 };
 
@@ -129,13 +133,13 @@ public:
   void setNextComp(Node *node){_nextComp=node;}
   void setType(Types::Type type, std::string compType);
 protected:
-  // nome da var
+  // Identificador da variavel
   std::string _id;
-  // aonde ela esta sendo usada
+  // Aonde ela esta sendo usada
   Use _use;
-  // tipo complexo da var
+  // Tipo complexo da variavel
   std::string _compType;
-  // next componente [p.x.y]
+  // Proximo componente [p.x.y]
   Node *_nextComp;
 };
 
@@ -169,7 +173,9 @@ public:
   void setIndex(Node *index){_index=index;}
   void setSize(int size);
 protected:
+  // Indice do arranjo (a[i+2] := 5;)
   Node *_index;
+  // Tamanho do arranjo (int[2]: a;)
   int _size;
 };
 
@@ -199,7 +205,9 @@ public:
   void setParams(Node *params){_params=params;}
   void setBlock(Node *block){_block=block;}
 protected:
+  // Parametros da função
   Node *_params;
+  // Corpo da função
   Node *_block;
 };
 
@@ -224,7 +232,9 @@ public:
   void setId(std::string id){_id=id;}
   void setBlock(Node *block){_block=block;}
 protected:
+  // Identificador do tipo composto
   std::string _id;
+  // Corpo do tipo composto
   Node *_block;
 };
 
@@ -252,7 +262,10 @@ public:
   void setExpr(Node *expr){_expr=expr;}
   void setFuncType(Types::Type funcType){_funcType=funcType;}
 protected:
+  // Expressão do retorno
   Node *_expr;
+  // Tipo da função aonde este 'return' esta
+  // Usado para verificar se o retorno esta correto
   Types::Type _funcType;
 };
 
@@ -280,6 +293,7 @@ public:
   void setThenBranch(Node *thenBranch){_thenBranch=thenBranch;}
   void setElseBranch(Node *elseBranch){_elseBranch=elseBranch;}
 protected:
+  // Condição, ramo then e ramo else do IF
   Node *_cond, *_thenBranch, *_elseBranch;
 };
 
@@ -305,6 +319,7 @@ public:
   void setCond(Node *cond){_cond=cond;}
   void setBlock(Node *block){_block=block;}
 protected:
+  // Condição e corpo do While
   Node *_cond, *_block;
 };
 
@@ -332,8 +347,11 @@ public:
   void setOp(Ops::Operation op){_op=op;}
   void setRight(Node *right){_right=right;}
 protected:
+  // Lado esquerdo da operação binaria
   Node *_left;
+  // Operação
   Ops::Operation _op;
+  // Lado direito da operação binaria
   Node *_right;
 };
 
@@ -359,7 +377,9 @@ public:
   void setOp(Ops::Operation op){_op=op;}
   void setRight(Node *right){_right=right;}
 protected:
+  // Operação
   Ops::Operation _op;
+  // Lado direito da operação unária
   Node *_right;
 };
 

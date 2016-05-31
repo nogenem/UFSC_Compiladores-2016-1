@@ -48,11 +48,14 @@ public:
 private:
   Kinds::Kind _kind=Kinds::unknown_t;
   Types::Type _type=Types::unknown_t;
-  bool _initialized=false;
-  int _aSize=-1;
-  AST::Node *_params=nullptr;
+  bool _initialized=false;// Inicializado/Definido?
+  int _aSize=-1;// Tamanho do arranjo
+  AST::Node *_params=nullptr;// Parametros da função
 
-  std::string _compType="";
+  std::string _compType="";// Tipo composto
+  // Tabela de simbolos do tipo composto
+  // Usado para saber quais componentes as variaveis podem ter
+  //  e para pegar seus dados
   SymbolTable *_typeTable=nullptr;
 };
 

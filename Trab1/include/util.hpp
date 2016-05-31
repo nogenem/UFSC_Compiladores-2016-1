@@ -87,7 +87,7 @@ const std::vector<const char*> messages = {
   "semantico: operacao %s espera inteiro ou real mas recebeu %s.",//op_wrong_type2
   "semantico: indice de tipo %s.",//index_wrong_type
   "semantico: arranjo %s com tamanho menor do que um.",//array_size_lst_1
-  "semantico: funcao %s declarada mas nunca definida.",//func_never_declared
+  "semantico: funcao %s declarada mas nunca definida.",//func_never_defined
   "semantico: parametro espera %s mas recebeu %s.",//param_wrong_type
   "semantico: arranjo %s possui tamanho menor que o necessario.",//array_size_lst_needed
   "semantico: funcao %s espera %d parametros mas recebeu %d.",//func_wrong_param_amount
@@ -100,7 +100,7 @@ const std::vector<const char*> messages = {
 
 enum ErrorType {syntax_error, unknown_symbol, without_declaration, not_initialized,
   redefinition, wrong_use, op_wrong_type1, op_wrong_type2, index_wrong_type,
-  array_size_lst_1, func_never_declared, param_wrong_type, array_size_lst_needed,
+  array_size_lst_1, func_never_defined, param_wrong_type, array_size_lst_needed,
   func_wrong_param_amount, type_wrong_comp, func_without_return, func_redeclaration,
   param_value_as_array, type_undefined};
 

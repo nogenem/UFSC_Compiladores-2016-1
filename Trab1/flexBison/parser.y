@@ -6,8 +6,7 @@
 AST::Block *programRoot; /* the root node of our program AST:: */
 ST::SymbolTable *symtab = new ST::SymbolTable(nullptr);  /* main symbol table */
 
-/* ideia temporaria para guardar
- *  os ultimos dados lidos
+/* guarda os ultimos dados lidos
  */
 struct TmpInfo {
   Types::Type type;
@@ -19,8 +18,15 @@ struct TmpInfo {
 } last;
 
 bool isArray = false;
+// Gambiarra pra saber se estou começando
+//  a ler os parametros do uso de uma função
 bool useOfFunc = false;
+// Gambiarra para saber se estou dentro
+//  do corpo de um tipo
 bool insideType = false;
+// Gambiarra para saber se deu syntax error
+//  na leitura do tamanho de um array
+// Ex: int[2.0]: a;
 bool syntaxError = false;
 
 extern int yylex();
@@ -34,15 +40,13 @@ void handlerDParams(AST::Node *&r, std::string id, AST::Node *type, AST::Node *n
 /*
   ASK:
     test input3_v1.2
+    declFunction -> redeclaration ? [st.cpp declFunction]
 
   TODO:
-    declFunction -> redeclaration ? [st.cpp 73]
 
   OBS:
     test input4_v1.0
       ordem trocada
-    test v1.2
-      Parametro -> parametro
 */
 %}
 
@@ -95,24 +99,35 @@ void handlerDParams(AST::Node *&r, std::string id, AST::Node *type, AST::Node *n
 
 %%
 
+/* Um programa é composto de linhas */
 program : lines { programRoot = $1; symtab->checkFuncs(); }
         ;
 
+/* As linhas de um programa são compostas de uma ou mais linhas */
 lines   : line        { $$ = new AST::Block();
                         if($1 != NULL) $$->addLine($1); }
         | lines line  { if($2 != NULL) $1->addLine($2); }
         ;
 
+/* As linhas do corpo de uma função são compostas de uma ou mais linhas */
 flines  : fline         { $$ = new AST::Block();
                           if($1 != NULL) $$->addLine($1); }
         | flines fline  { if($2 != NULL) $1->addLine($2); }
         ;
 
+/* As linhas do corpo da definição de um tipo são compostas de
+ *  uma ou mais linhas
+ */
 tlines  : tline         { $$ = new AST::Block();
                           if($1 != NULL) $$->addLine($1); }
         | tlines tline  { if($2 != NULL) $1->addLine($2); }
         ;
 
+/* Uma linha pode ter uma declaração de variaveis/arranjos
+ *  ou uma declaração/definição de função
+ *  ou uma declaração de tipo ou uma atribuição
+ *  ou um IF ou um While ou um Return.
+ */
 line    : assign ';'              { $$ = $1; }
         | decl ';'                { $$ = $1; }
         | DECL_T FUN_T fdecl ';'  { $$ = $3; }
@@ -126,6 +141,10 @@ line    : assign ';'              { $$ = $1; }
         | DEF_T error DEF_T       { yyerrok; $$ = NULL; }
         ;
 
+/* Uma linha do corpo de uma função pode ter uma declaração
+ *  de variaveis/arranjos ou uma atribuição ou um IF
+ *  ou um While ou um Return.
+ */
 fline   : assign ';'              { $$ = $1; }
         | decl ';'                { $$ = $1; }
         | IF_T cond IF_T          { $$ = $2; }
@@ -136,25 +155,41 @@ fline   : assign ';'              { $$ = $1; }
         | WHILE_T error WHILE_T   { yyerrok; $$ = NULL; }
         ;
 
+/* Uma linha do corpo de uma declaração de tipo só pode
+ *  ter declarações de variaveis ou arranjos
+ */
 tline   : decl ';'                { $$ = $1; }
         | error ';'               { yyerrok; $$ = NULL; }
         ;
 
+/* A atribuição de valor para variaveis e arranjos contem
+ *  uma 'lista de componentes' -id, id[indice] ou uma sequencia deles-
+ *  e uma expressão
+ */
 assign  : complist ASSIGN_OPT expr
             { symtab->assignVariable($1);
               $$ = new AST::BinOp($1, Ops::assign, $3); }
         ;
 
-/* declaração */
+/* A declaração de variaveis e arranjos contem um tipo,
+ *  composto ou primitivo, e uma lista de identificadores
+ */
 decl    : idORarr ':' varlist   { handlerDecl($$, $3); }
         | tORtarr ':' varlist   { handlerDecl($$, $3); }
         ;
 
-/* declaração de função */
+/* A declaração de funções contem um tipo, o id da função
+ * e a lista de seus parametros
+ */
 fdecl   : vartype ':' ID_V '(' dparamlist ')'
             { $$ = symtab->declFunction($5, $3, $1); }
         ;
 
+/* A definição de funções contem um tipo, o id da função,
+ *  seus parametros e seu corpo
+ * Uma função, sintaticamente, pode ter um corpo vazio
+ * A definição de tipos contem o id do tipo e seu corpo
+ */
 def     : FUN_T vartype ':' defid '(' dparamlist ')' fnewscope flines END_T
             { symtab = symtab->getPrevious();
               $$ = symtab->defFunction($6, $9, $4, $2); }
@@ -169,6 +204,9 @@ def     : FUN_T vartype ':' defid '(' dparamlist ')' fnewscope flines END_T
             { yyerrok; $$ = NULL; }/* shift/reduce conflict */
         ;
 
+/* Uma condição, IF, contem uma expresão condicional,
+ *  um ramo THEN e, opcionalmente, um ramo ELSE
+ */
 cond    : expr THEN_T newscope flines END_T
             { symtab = symtab->getPrevious();
               $$ = new AST::CondExpr($1, $4, nullptr); }
@@ -182,39 +220,47 @@ cond    : expr THEN_T newscope flines END_T
               symtab = symtab->getPrevious(); }/* shift/reduce conflict [s newscope] */
         ;
 
+/* Um Laço While contem uma expressão e um corpo
+ */
 enqt    : expr DO_T newscope flines END_T
             { $$ = new AST::WhileExpr($1, $4); }
         | expr DO_T error END_T
             { yyerrok; $$ = NULL; }/* shift/reduce conflict [ñ newscope] */
         ;
 
-/* lista de vars para tipos compostos */
+/* lista de vars para tipos compostos
+ */
 complist  : idORarr2              { $$ = $1; }
           | idORarr2 '.' complist { $$ = $1; AST::Variable::cast($$)->setNextComp($3); }
           ;
 
-/* id ou array geral, soh salva os valores */
+/* id ou array geral, soh salva os valores
+ */
 idORarr : ID_V              { isArray = false; last.type = Types::composite_t;
                               last.compType = $1; last.index = NULL; last.size = -1; }
         | ID_V '[' expr ']' { handlerIDorARR($1, $3); }
         ;
 
-/* id ou array para atribuicao/lista de params, gera os nodos dumb */
+/* id ou array para atribuicao/lista de params, gera os nodos dumb
+ */
 idORarr2  : ID_V              { $$ = new AST::Variable($1, Types::composite_t); }
           | ID_V '[' expr ']' { $$ = new AST::Array($3, $1, Types::composite_t); }
           ;
 
-/* type ou type array */
+/* type ou type array geral, soh salva os valores
+ */
 tORtarr : vartype               { isArray = false; last.size = -1; }
         | vartype '[' expr ']'  { handlerTorTARR($3); }
         ;
 
-/* type ou type array para lista de params, gera os nodos dumb */
+/* type ou type array para lista de params, gera os nodos dumb
+ */
 tORtarr2  : vartype               { $$ = new AST::Variable("", $1); }
           | vartype '[' expr ']'  { $$ = new AST::Array($3, "", $1); }
           ;
 
-/* tipos */
+/* Um tipo pode ser inteiro, real ou booleano
+ */
 vartype : INT_T   { $$ = $1; last.type = $1; }
         | REAL_T  { $$ = $1; last.type = $1; }
         | BOOL_T  { $$ = $1; last.type = $1; }
@@ -227,6 +273,9 @@ varlist : ID_V              { if(syntaxError) $$ = nullptr;
                               else $$ = symtab->newVariable($1, $3, isArray, insideType); }
         ;
 
+/* Uma expressão consiste de apenas um termo ou uma operação
+ *  binaria ou uma operação unária
+ */
 expr    : term                    { $$ = $1; }
         | expr '+' expr           { $$ = new AST::BinOp($1, Ops::plus, $3); }
         | expr '-' expr           { $$ = new AST::BinOp($1, Ops::b_minus, $3); }
@@ -245,6 +294,9 @@ expr    : term                    { $$ = $1; }
     		| '(' expr ')'            { $$ = new AST::UniOp(Ops::u_paren, $2); }
     		;
 
+/* Um termo pode ser um valor booleano, inteiro ou real ou
+ *  uma lista componentes ou o uso de uma função
+ */
 term    : BOOL_V            { $$ = new AST::Value($1, Types::bool_t); }
         | INT_V             { $$ = new AST::Value($1, Types::integer_t); }
         | REAL_V            { $$ = new AST::Value($1, Types::real_t); }
@@ -253,6 +305,10 @@ term    : BOOL_V            { $$ = new AST::Value($1, Types::bool_t); }
             { $$ = symtab->useFunc($4, $1); useOfFunc = false; }
         ;
 
+/* A lista de parametros da declaração/definição de funções
+ *  consiste de NULL ou apenas uma variavel ou apenas um
+ *  arranjo ou de uma lista de variaveis/arranjos
+ */
 dparamlist  :             { $$ = NULL; last.params = NULL; }
             | dparamlist2 { $$ = $1;   last.params = $$; }
             ;
@@ -267,6 +323,9 @@ dparamlist2 : idORarr2 ':' ID_V
                 { handlerDParams($$, $3, $1, $5); }
             ;
 
+/* A lista de parametros do uso de uma função consiste de
+ * NULL ou uma expressão ou uma lista de expressões
+ */
 uparamlist  :             { $$ = NULL; }
             | uparamlist2 { $$ = $1; }
             ;
@@ -275,25 +334,43 @@ uparamlist2 : expr                 { $$ = $1; }
             | expr ',' uparamlist2 { $$ = $1; $$->setNext($3); }
             ;
 
+/* Regra extra apenas usada para criar um novo 'escopo'
+ */
 newscope    : { symtab = new ST::SymbolTable(symtab); }
             ;
 
+/* Regra extra usada para criar um novo 'escopo' para o corpo
+ *  das funções e tambem para adicionar os parametros da função
+ *  neste novo 'escopo'
+ */
 fnewscope   : { auto symbol = symtab->getSymbol(last.id);
                 symtab = new ST::SymbolTable(symtab);
                 symtab->addFuncParams(symbol!=nullptr?symbol->getParams():nullptr,
                   last.params); }
             ;
 
+/* Regra extra para voltar um 'escopo' e criar um novo
+ * Esta regra é usada no Else do IF, para sair do corpo
+ *  do ramo THEN e criar um novo 'escopo' para o ramo ELSE
+ */
 enewscope   : { symtab = symtab->getPrevious();
                 symtab = new ST::SymbolTable(symtab); }
             ;
 
+/* Regra extra apenas usada para salvar o ultimo id
+ *  usado em uma função
+ */
 defid   : ID_V  { $$ = $1; last.id = $1; }
         ;
 
+/* Regra extra usada para saber se estou começando a ler
+ *  os parametros do uso de uma função
+ */
 useoffunc : { useOfFunc = true; }
           ;
-
+/* Regra extra usada para saber se estou
+ *  entrando no corpo de um tipo composto
+ */
 insidetype  : { insideType = true; }
             ;
 
