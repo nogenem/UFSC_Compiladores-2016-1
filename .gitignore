@@ -39,3 +39,6 @@ parser.h
 parser.hpp
 parser.cpp
 scanner.cpp
+
+# Arquivos de Debug
+*.stackdump
