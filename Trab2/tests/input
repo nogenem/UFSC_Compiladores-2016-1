@@ -3,3 +3,5 @@ local b = 2 < 4 and true;
 local c = 5 + 5 * 6 / 8;
 local d = -55;
 local e = not true;
+return a or b and not e;
+return c + d;

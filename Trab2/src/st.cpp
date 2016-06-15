@@ -94,6 +94,23 @@ AST::Node* SymbolTable::_assignVar(AST::Variable *var, AST::Node *expr){
 	return new AST::BinOp(var,Ops::assign,expr);
 }
 
+AST::Node* SymbolTable::useVar(std::string id, AST::Node *index){
+	Types::Type type = Types::unknown_t;
+	bool error = false;
+	auto symbol = getSymbol(id);
+	// Falta checar o index!
+	if(symbol != nullptr){
+		type = symbol->getType();
+	}else{
+		Errors::print(Errors::without_declaration, id.c_str());
+		error = true;
+	}
+
+	auto var = new AST::Variable(id,index,AST::read_u,type,nullptr);
+	var->setError(error);
+	return var;
+}
+
 // getters
 Symbol* SymbolTable::getSymbol(std::string id){
 	bool result = _entryList.find(id) != _entryList.end();

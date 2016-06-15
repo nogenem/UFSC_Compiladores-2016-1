@@ -21,7 +21,7 @@ enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
 	  function_nt, return_nt, binop_nt, uniop_nt };
 
 // Possiveis usos de uma variavel
-enum Use { unknown_u, attr_u, decl_u, param_u };
+enum Use { unknown_u, attr_u, decl_u, param_u, read_u };
 
 class Node;
 

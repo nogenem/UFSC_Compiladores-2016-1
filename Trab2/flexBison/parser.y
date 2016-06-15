@@ -11,8 +11,9 @@ extern void yyerror(const char* s, ...);
 
 /*
 	TODO:
+		retornar um pair<type,error> nas funções binType e uniType?
+		erro tem que propagar para toda a expressão!
 		mover parte do interpretador para versao 1.1
- 	 	botar return soh no fim dos blocos?
 */
 
 %}
@@ -54,7 +55,7 @@ chunk	: block 	{ programRoot = $1; }
 fchunk	: fblock 	{ $$ = $1; }
 		| fblockend	{ $$ = $1; }
 		| ret		{ $$ = new AST::Block(symtab);
-		  	  	  	  if($1 != nullptr) $$->addLine($1); }  
+		  	  	  	  $$->addLine($1); }  
 		;
 
 block	: line				{ $$ = new AST::Block(symtab);
@@ -64,17 +65,17 @@ block	: line				{ $$ = new AST::Block(symtab);
 
 fblock  : fline				{ $$ = new AST::Block(symtab);
   	  	  	  	  	  	  	  if($1 != nullptr) $$->addLine($1); }
+		| fblock fline		{ if($2 != nullptr) $1->addLine($2); }
 		| fblock fline ret	{ if($2 != nullptr) $1->addLine($2);
 		  	  	  	  	  	  if($3 != nullptr) $1->addLine($3); }
 		;
 	
 fblockend	: fline ret { $$ = new AST::Block(symtab);
 						  if($1 != nullptr) $$->addLine($1);
-						  if($1 != nullptr) $$->addLine($2); }
+						  $$->addLine($2); }
 			;
 
-ret		: 					{ $$ = nullptr; }
-		| RETURN_T expr ';' { $$ = new AST::Return($2); }
+ret		: RETURN_T expr ';' { $$ = new AST::Return($2); }
 		;
 
 fline   : decl ';'    	{ $$ = $1; }
@@ -152,7 +153,7 @@ expr2	  : expr 		{ $$ = $1; }
 
 term    : BOOL_V                 { $$ = new AST::Value($1, Types::bool_t); }
         | INT_V                  { $$ = new AST::Value($1, Types::int_t); }
-        | ID_V                   { $$ = new AST::Variable($1,nullptr,AST::unknown_u,Types::unknown_t,nullptr); }
+        | ID_V                   { $$ = symtab->useVar($1, nullptr); }
         | ID_V '[' expr ']'      { $$ = nullptr; }
         | ID_V '(' exprlist2 ')' { $$ = nullptr; }
         ;

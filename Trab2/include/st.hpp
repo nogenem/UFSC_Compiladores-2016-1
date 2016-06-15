@@ -59,6 +59,7 @@ public:
 
 	AST::Node* declVar(AST::Node *varlist, AST::Node *exprlist);
 	AST::Node* assignVar(AST::Node *varlist, AST::Node *exprlist);
+	AST::Node* useVar(std::string id, AST::Node *index);
 
 	// getters
 	SymbolTable* getPrevious(){return _previous;}
