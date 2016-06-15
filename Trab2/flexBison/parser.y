@@ -32,8 +32,8 @@ extern void yyerror(const char* s, ...);
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
 %token AND_OPT OR_OPT NOT_OPT
 
-%type <block> program lines flines
-%type <node> line fline assign decl namelist varlist
+%type <block> block fblock fblockend fchunk
+%type <node> line fline assign decl namelist varlist ret
 %type <node> exprlist exprlist2 expr expr2 term
 
 %left OR_OPT
@@ -44,26 +44,41 @@ extern void yyerror(const char* s, ...);
 %nonassoc NOT_OPT U_MINUS
 %nonassoc error
 
-%start program
+%start chunk
 
 %%
 
-program : lines { programRoot = $1; }
-        ;
+chunk	: block 	{ programRoot = $1; }
+		;
 
-lines   : line        { $$ = new AST::Block(symtab);
-                        if($1 != nullptr) $$->addLine($1); }
-        | lines line  { if($2 != nullptr) $1->addLine($2); }
-        ;
+fchunk	: fblock 	{ $$ = $1; }
+		| fblockend	{ $$ = $1; }
+		| ret		{ $$ = new AST::Block(symtab);
+		  	  	  	  if($1 != nullptr) $$->addLine($1); }  
+		;
 
-flines  : fline			{ $$ = new AST::Block(symtab);
-						  if($1 != nullptr) $$->addLine($1); }
-        | flines fline  { if($2 != nullptr) $1->addLine($2); }
-        ;
+block	: line				{ $$ = new AST::Block(symtab);
+						  	  if($1 != nullptr) $$->addLine($1); }
+		| block line		{ if($2 != nullptr) $1->addLine($2); }
+		;
+
+fblock  : fline				{ $$ = new AST::Block(symtab);
+  	  	  	  	  	  	  	  if($1 != nullptr) $$->addLine($1); }
+		| fblock fline ret	{ if($2 != nullptr) $1->addLine($2);
+		  	  	  	  	  	  if($3 != nullptr) $1->addLine($3); }
+		;
+	
+fblockend	: fline ret { $$ = new AST::Block(symtab);
+						  if($1 != nullptr) $$->addLine($1);
+						  if($1 != nullptr) $$->addLine($2); }
+			;
+
+ret		: 					{ $$ = nullptr; }
+		| RETURN_T expr ';' { $$ = new AST::Return($2); }
+		;
 
 fline   : decl ';'    	{ $$ = $1; }
         | assign ';'  	{ $$ = $1; }
-        | RETURN_T expr ';' { $$ = new AST::Return($2); }
         | cond END_T  	{ $$ = nullptr; }
         | enqt END_T  	{ $$ = nullptr; }
         | func END_T 	{ $$ = nullptr; }
@@ -71,8 +86,9 @@ fline   : decl ';'    	{ $$ = $1; }
         | error END_T 	{yyerrok;}
         ;
 
-line    : fline       	{ $$ = $1; }
-        | expr ';'  	{ $$ = $1; }
+line    : fline       		{ $$ = $1; }
+        | expr ';'  		{ $$ = $1; }
+        | RETURN_T expr ';' { $$ = new AST::Return($2); }
         ;
 
 decl    : LOCAL_T namelist ASSIGN_OPT exprlist2	{ $$ = symtab->declVar($2, $4); }
@@ -82,15 +98,15 @@ decl    : LOCAL_T namelist ASSIGN_OPT exprlist2	{ $$ = symtab->declVar($2, $4); 
 assign  : varlist ASSIGN_OPT exprlist2 { $$ = symtab->assignVar($1, $3); }
         ;
 
-cond    : IF_T expr THEN_T flines   {}
-        | IF_T expr THEN_T flines ELSE_T flines {}
+cond    : IF_T expr THEN_T fchunk   {}
+        | IF_T expr THEN_T fchunk ELSE_T fchunk {}
         ;
 
-enqt    : WHILE_T expr DO_T flines  {}
+enqt    : WHILE_T expr DO_T fchunk  {}
         ;
 
-func    : FUN_T ID_V '(' namelist ')' flines  {}
-        | FUN_T ID_V '(' ')' flines           {}
+func    : FUN_T ID_V '(' namelist ')' fchunk  {}
+        | FUN_T ID_V '(' ')' fchunk           {}
         ;
 
 namelist  : ID_V              { $$ = new AST::Variable($1,nullptr,AST::unknown_u,Types::unknown_t,nullptr); }
@@ -145,8 +161,8 @@ arrterm : '{' exprlist '}'        {}
         | '{' '}'                 {}
         ;
         
-functerm	: FUN_T '(' exprlist2 ')' flines END_T {}
-			| FUN_T '(' ')' flines END_T {}
+functerm	: FUN_T '(' exprlist2 ')' fchunk END_T {}
+			| FUN_T '(' ')' fchunk END_T {}
 			;
  
 %%
