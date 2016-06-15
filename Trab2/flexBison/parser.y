@@ -2,7 +2,7 @@
 #include "ast.hpp"
 #include "st.hpp"
 #include "util.hpp"
-
+	
 AST::Block *programRoot;
 ST::SymbolTable *symtab = new ST::SymbolTable(nullptr);
 
@@ -10,8 +10,9 @@ extern int yylex();
 extern void yyerror(const char* s, ...);
 
 /*
-  TODO:
-  
+	TODO:
+		mover parte do interpretador para versao 1.1
+ 	 	botar return soh no fim dos blocos?
 */
 
 %}

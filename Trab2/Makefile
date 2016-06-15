@@ -16,7 +16,7 @@ OUTPUT=myparse
 
 all: $(OUTPUT)
 
-$(OUTPUT): $(OBJ)/main.o $(OBJ)/util.o $(OBJ)/ast.o $(OBJ)/calctree.o $(OBJ)/castast.o $(OBJ)/printer.o $(OBJ)/st.o $(OBJ)/parser.o $(OBJ)/scanner.o
+$(OUTPUT): $(OBJ)/main.o $(OBJ)/util.o $(OBJ)/ast.o $(OBJ)/calctree.o $(OBJ)/castast.o $(OBJ)/st.o $(OBJ)/parser.o $(OBJ)/scanner.o
 	${CC} -o $(OUTPUT) $(OBJ)/*.o -I$(INC) -I$(INC2) ${PARAM} ${LLVMLIB}
 
 $(OBJ)/main.o: main.cpp $(INC)/ast.hpp
@@ -34,9 +34,6 @@ $(OBJ)/calctree.o: $(SRC)/calctree.cpp $(INC)/ast.hpp
 $(OBJ)/castast.o: $(SRC)/castast.cpp $(INC)/ast.hpp
 	${CC} -c -o $(OBJ)/castast.o $(SRC)/castast.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 	
-$(OBJ)/printer.o: $(SRC)/printer.cpp $(INC)/ast.hpp
-	${CC} -c -o $(OBJ)/printer.o $(SRC)/printer.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
-
 $(OBJ)/st.o: $(SRC)/st.cpp $(INC)/ast.hpp $(INC)/st.hpp
 	${CC} -c -o $(OBJ)/st.o $(SRC)/st.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 

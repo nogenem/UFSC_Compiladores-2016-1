@@ -38,7 +38,6 @@ public:
 	virtual ~Node();
 
 	// virtual funcs
-	virtual void printTree(){}
 	virtual int calcTree(ST::SymbolTable scope){return 0;}
 	virtual NodeType getNodeType(){return node_nt;}
 	virtual const char* getTypeTxt(bool masc);
@@ -66,7 +65,6 @@ public:
 	~Block();
 
 	// virtual funcs
-	void printTree();
 	int calcTree(ST::SymbolTable scope);
 	NodeType getNodeType(){return block_nt;}
 
@@ -89,7 +87,6 @@ public:
 	~Variable();
 
 	// virtual funcs
-	void printTree();
 	int calcTree(ST::SymbolTable scope);
 	NodeType getNodeType(){return variable_nt;}
 
@@ -121,7 +118,6 @@ public:
 	virtual ~Value(){}
 
 	// virtual funcs
-	virtual void printTree();
 	virtual int calcTree(ST::SymbolTable scope);
 	virtual NodeType getNodeType(){return value_nt;}
 
@@ -146,7 +142,6 @@ public:
 	~Function();
 
 	// virtual funcs
-	void printTree();
 	int calcTree(ST::SymbolTable scope);
 	NodeType getNodeType(){return function_nt;}
 
@@ -167,7 +162,6 @@ public:
 	~Array();
 
 	// virtual funcs
-	void printTree();
 	int calcTree(ST::SymbolTable scope);
 	NodeType getNodeType(){return array_nt;}
 
@@ -187,7 +181,6 @@ public:
 	~Return();
 
 	// virtual funcs
-	void printTree();
 	int calcTree(ST::SymbolTable scope);
 	NodeType getNodeType(){return return_nt;}
 
@@ -208,7 +201,6 @@ public:
 	~BinOp();
 
 	// virtual funcs
-	void printTree();
 	int calcTree(ST::SymbolTable scope);
 	NodeType getNodeType(){return binop_nt;}
 
@@ -240,7 +232,6 @@ public:
 	~UniOp();
 
 	// virtual funcs
-	void printTree();
 	int calcTree(ST::SymbolTable scope);
 	NodeType getNodeType(){return uniop_nt;}
 
