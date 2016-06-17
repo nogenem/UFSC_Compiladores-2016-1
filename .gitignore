@@ -1,4 +1,7 @@
-﻿# Compiled Object files
+﻿# Testes
+tests/Resumo.txt
+
+# Compiled Object files
 *.slo
 *.lo
 *.o
