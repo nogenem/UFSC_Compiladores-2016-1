@@ -6,7 +6,6 @@
  */
 
 #include <cstdlib>
-#include <iostream>
 #include <string>
 
 #include "../include/ast.hpp"
@@ -79,9 +78,10 @@ int BinOp::calcTree(ST::SymbolTable *scope){
 		return rv;
 	}
 
-	if(getType() == Types::unknown_t || left->getError())
+	if(getType() == Types::unknown_t || left->getError()){
+		setError(true);
 		return 0;
-
+	}
 	switch (getOp()) {
 		case Ops::b_and:
 			return lv && rv;
@@ -124,8 +124,10 @@ int UniOp::calcTree(ST::SymbolTable *scope){
 
 	setType(Types::unType(getOp(), right->getType()));
 
-	if(getType() == Types::unknown_t)
+	if(getType() == Types::unknown_t){
+		setError(true);
 		return 0;
+	}
 
 	switch (getOp()) {
 		case Ops::u_paren:

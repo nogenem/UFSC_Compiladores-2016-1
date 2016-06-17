@@ -13,6 +13,7 @@ extern void yyerror(const char* s, ...);
 /*
 	TODO:
 		
+		adicionar token nil?
 		mudar assinatura do método 'Symbol::setType'?
 		remover _assignVar?
 */

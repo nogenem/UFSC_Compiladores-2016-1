@@ -25,7 +25,8 @@ void ITR::execExpr(AST::Node *node, bool print/*=false*/){
 	while(tmp != nullptr){
 		if(!tmp->getError()){
 			v = tmp->calcTree(symtab);
-			if(print) _print(v, tmp->getType());
+			if(print && !tmp->getError())
+				_print(v, tmp->getType());
 		}
 		tmp = tmp->getNext();
 	}
@@ -38,6 +39,9 @@ void ITR::_print(int value, Types::Type type){
 			break;
 		case Types::bool_t:
 			std::cout << ">> " << (value==1?"true":"false") << "\n";
+			break;
+		case Types::unknown_t:
+			std::cout << ">> " << "nil\n";
 			break;
 		default:
 			break;

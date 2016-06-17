@@ -5,8 +5,9 @@
  *      Author: Gilne
  */
 
-#include "st.hpp"
-#include "ast.hpp"
+#include "../include/st.hpp"
+
+#include "../include/ast.hpp"
 
 using namespace ST;
 
@@ -57,13 +58,15 @@ AST::Node* SymbolTable::_newVar(AST::Node *varlist){
 
 AST::Node* SymbolTable::assignVar(AST::Node *varlist, AST::Node *exprlist){
 	AST::Node *retlist = nullptr;
+	AST::Node *rettmp = nullptr;
 	AST::Node *tmp = nullptr;
 	auto var = AST::Variable::cast(varlist);
 	auto expr = exprlist;
 	while(var != nullptr){
 		tmp = var;
-		if(expr != nullptr && !var->getError()){
-			tmp = _assignVar(var,expr);
+		if(expr != nullptr){
+			if(!var->getError())
+				tmp = _assignVar(var,expr);
 			expr = expr->getNext();
 			exprlist->setNext(nullptr);
 			exprlist = expr;
@@ -72,8 +75,13 @@ AST::Node* SymbolTable::assignVar(AST::Node *varlist, AST::Node *exprlist){
 		varlist->setNext(nullptr);
 		varlist = var;
 
-		if(retlist==nullptr) retlist = tmp;
-		else retlist->setNext(tmp);
+		if(retlist==nullptr){
+			retlist = rettmp = tmp;
+		}else{
+			rettmp->setNext(tmp);
+			rettmp = tmp;
+		}
+
 	}
 
 	return retlist;
