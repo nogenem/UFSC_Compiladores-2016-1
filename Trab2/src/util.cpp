@@ -19,15 +19,19 @@ Type Types::unType(Ops::Operation op, Type right){
 	switch (op) {
 		case Ops::u_minus:
 			ret = int_t;
-			if(right != int_t)
+			if(right != int_t){
 				Errors::print(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], rtxt);
+				ret = unknown_t;
+			}
 			break;
 		case Ops::u_not:
 			ret = bool_t;
-			if(right != bool_t)
+			if(right != bool_t){
 				Errors::print(Errors::op_wrong_type, Ops::opName[op],
 						mascType[bool_t], rtxt);
+				ret = unknown_t;
+			}
 			break;
 		case Ops::u_paren:
 			ret = right;
@@ -50,12 +54,16 @@ Type Types::binType(Type left, Ops::Operation op, Type right){
 		case Ops::times:
 		case Ops::division:
 			ret = int_t;
-			if(left != int_t)
+			if(left != int_t){
 				Errors::print(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], ltxt);
-			if(right != int_t)
+				ret = unknown_t;
+			}
+			if(right != int_t){
 				Errors::print(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], rtxt);
+				ret = unknown_t;
+			}
 			break;
 
 		case Ops::eq:
@@ -65,23 +73,31 @@ Type Types::binType(Type left, Ops::Operation op, Type right){
 		case Ops::lst:
 		case Ops::lsteq:
 			ret = bool_t;
-			if(left != int_t)
+			if(left != int_t){
 				Errors::print(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], ltxt);
-			if(right != int_t)
+				ret = unknown_t;
+			}
+			if(right != int_t){
 				Errors::print(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], rtxt);
+				ret = unknown_t;
+			}
 			break;
 
 		case Ops::b_and:
 		case Ops::b_or:
 			ret = bool_t;
-			if(left != bool_t)
+			if(left != bool_t){
 				Errors::print(Errors::op_wrong_type, Ops::opName[op],
 						mascType[bool_t], ltxt);
-			if(right != bool_t)
+				ret = unknown_t;
+			}
+			if(right != bool_t){
 				Errors::print(Errors::op_wrong_type, Ops::opName[op],
 						mascType[bool_t], rtxt);
+				ret = unknown_t;
+			}
 			break;
 
 		default: ret = unknown_t;

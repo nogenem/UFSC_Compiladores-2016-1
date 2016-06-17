@@ -62,7 +62,7 @@ AST::Node* SymbolTable::assignVar(AST::Node *varlist, AST::Node *exprlist){
 	auto expr = exprlist;
 	while(var != nullptr){
 		tmp = var;
-		if(expr != nullptr){
+		if(expr != nullptr && !var->getError()){
 			tmp = _assignVar(var,expr);
 			expr = expr->getNext();
 			exprlist->setNext(nullptr);
@@ -80,31 +80,18 @@ AST::Node* SymbolTable::assignVar(AST::Node *varlist, AST::Node *exprlist){
 }
 
 AST::Node* SymbolTable::_assignVar(AST::Variable *var, AST::Node *expr){
-	if(!checkId(var->getId(), false)){
-		Errors::print(Errors::without_declaration, var->getId());
-	}else if(!var->getError()){
-		auto symbol = getSymbol(var->getId());
-		if(expr != nullptr){
-			//symbol->setValue(expr->calcTree(this));
-			symbol->setType(expr->getType());
-			var->setType(expr->getType());
-		}
-	}
 	var->setUse(AST::attr_u);
 	return new AST::BinOp(var,Ops::assign,expr);
 }
 
 AST::Node* SymbolTable::useVar(std::string id, AST::Node *index){
 	Types::Type type = Types::unknown_t;
-	bool error = false;
 	auto symbol = getSymbol(id);
+	bool error = false;
+
 	// Falta checar o index!
-	if(symbol != nullptr){
+	if(symbol != nullptr)
 		type = symbol->getType();
-	}else{
-		Errors::print(Errors::without_declaration, id.c_str());
-		error = true;
-	}
 
 	auto var = new AST::Variable(id,index,AST::read_u,type,nullptr);
 	var->setError(error);

@@ -11,9 +11,9 @@ extern void yyerror(const char* s, ...);
 
 /*
 	TODO:
-		retornar um pair<type,error> nas funções binType e uniType?
-		erro tem que propagar para toda a expressão!
-		mover parte do interpretador para versao 1.1
+		
+		
+		remover _assignVar?
 */
 
 %}

@@ -194,9 +194,7 @@ class BinOp : public Node{
 public:
 	// constructors
 	BinOp(Node *left, Ops::Operation op, Node *right):
-		_left(left), _op(op), _right(right){
-		setType(Types::binType(left->getType(), op, right->getType()));
-	}
+		_left(left), _op(op), _right(right){}
 	// destructors
 	~BinOp();
 
@@ -225,9 +223,7 @@ class UniOp : public Node{
 public:
 	// constructors
 	UniOp(Ops::Operation op, Node *right):
-		_op(op), _right(right){
-		setType(Types::unType(op, right->getType()));
-	}
+		_op(op), _right(right){}
 	// destructors
 	~UniOp();
 
