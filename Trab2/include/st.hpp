@@ -64,6 +64,7 @@ public:
 	// getters
 	SymbolTable* getPrevious(){return _previous;}
 	Symbol* getSymbol(std::string id);
+	bool isGlobal(){return _previous==nullptr;}
 	// setters
 	void setPrevious(SymbolTable *prev){_previous=prev;}
 private:

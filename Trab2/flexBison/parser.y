@@ -1,4 +1,5 @@
 %{
+#include "itr.hpp"
 #include "ast.hpp"
 #include "st.hpp"
 #include "util.hpp"
@@ -12,7 +13,7 @@ extern void yyerror(const char* s, ...);
 /*
 	TODO:
 		
-		
+		mudar assinatura do método 'Symbol::setType'?
 		remover _assignVar?
 */
 
@@ -87,9 +88,12 @@ fline   : decl ';'    	{ $$ = $1; }
         | error END_T 	{yyerrok;}
         ;
 
-line    : fline       		{ $$ = $1; }
-        | expr ';'  		{ $$ = $1; }
-        | RETURN_T expr ';' { $$ = new AST::Return($2); }
+line    : fline       		{ $$ = $1;
+							  ITR::execExpr($$,false); }
+        | expr ';'  		{ $$ = $1;
+        					  ITR::execExpr($$,true); }
+        | RETURN_T expr ';' { $$ = new AST::Return($2);
+        					  ITR::execExpr($$,true); }
         ;
 
 decl    : LOCAL_T namelist ASSIGN_OPT exprlist2	{ $$ = symtab->declVar($2, $4); }

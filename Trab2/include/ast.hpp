@@ -9,10 +9,12 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
 
-#include "st.hpp"
 #include "util.hpp"
+
+namespace ST {
+class SymbolTable;
+} /* namespace ST */
 
 namespace AST {
 
@@ -38,7 +40,7 @@ public:
 	virtual ~Node();
 
 	// virtual funcs
-	virtual int calcTree(ST::SymbolTable scope){return 0;}
+	virtual int calcTree(ST::SymbolTable *scope){return 0;}
 	virtual NodeType getNodeType(){return node_nt;}
 	virtual const char* getTypeTxt(bool masc);
 
@@ -59,13 +61,13 @@ protected:
 class Block : public Node {
 public:
 	// constructors
-	Block(ST::SymbolTable st):
+	Block(ST::SymbolTable *st):
 		_scope(st){}
 	// destructors
 	~Block();
 
 	// virtual funcs
-	int calcTree(ST::SymbolTable scope);
+	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return block_nt;}
 
 	// static funcs
@@ -74,7 +76,7 @@ public:
 	// list funcs
 	void addLine(Node *line){_lines.push_back(line);}
 protected:
-	ST::SymbolTable _scope;
+	ST::SymbolTable *_scope;
 	NodeList _lines;
 };
 
@@ -87,7 +89,7 @@ public:
 	~Variable();
 
 	// virtual funcs
-	int calcTree(ST::SymbolTable scope);
+	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return variable_nt;}
 
 	// static funcs
@@ -118,7 +120,7 @@ public:
 	virtual ~Value(){}
 
 	// virtual funcs
-	virtual int calcTree(ST::SymbolTable scope);
+	virtual int calcTree(ST::SymbolTable *scope);
 	virtual NodeType getNodeType(){return value_nt;}
 
 	// static funcs
@@ -142,7 +144,7 @@ public:
 	~Function();
 
 	// virtual funcs
-	int calcTree(ST::SymbolTable scope);
+	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return function_nt;}
 
 	// static funcs
@@ -162,7 +164,7 @@ public:
 	~Array();
 
 	// virtual funcs
-	int calcTree(ST::SymbolTable scope);
+	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return array_nt;}
 
 	// static funcs
@@ -181,11 +183,16 @@ public:
 	~Return();
 
 	// virtual funcs
-	int calcTree(ST::SymbolTable scope);
+	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return return_nt;}
 
 	// static funcs
 	static Return* cast(Node *node);
+
+	// getters
+	Node* getExpr(){return _expr;}
+	// setters
+	void setExpr(Node *expr){_expr=expr;}
 protected:
 	Node *_expr;
 };
@@ -199,7 +206,7 @@ public:
 	~BinOp();
 
 	// virtual funcs
-	int calcTree(ST::SymbolTable scope);
+	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return binop_nt;}
 
 	// static funcs
@@ -228,12 +235,18 @@ public:
 	~UniOp();
 
 	// virtual funcs
-	int calcTree(ST::SymbolTable scope);
+	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return uniop_nt;}
 
 	// static funcs
 	static UniOp* cast(Node *node);
 
+	// getters
+	Node* getRight(){return _right;}
+	const Ops::Operation getOp(){return _op;}
+	// setters
+	void setOp(Ops::Operation op){_op=op;}
+	void setRight(Node *node){_right=node;}
 protected:
 	Ops::Operation _op;
 	Node *_right;

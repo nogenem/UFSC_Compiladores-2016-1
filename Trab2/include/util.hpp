@@ -69,10 +69,11 @@ namespace Errors {
 			"semantico: variavel %s sem declaracao.",//without_declaration
 			"semantico: variavel %s sofrendo redefinicao.",//redefinition
 			"semantico: operacao %s espera %s mas recebeu %s.",//op_wrong_type
+			"semantico: divisao por zero.",//div_zero
 	};
 
 	enum ErrorType{ syntax_error, unknown_symbol, without_declaration,
-					redefinition, op_wrong_type };
+					redefinition, op_wrong_type, div_zero };
 
 	void print(ErrorType error, ...);
 }

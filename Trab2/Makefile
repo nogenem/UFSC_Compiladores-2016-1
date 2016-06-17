@@ -16,7 +16,7 @@ OUTPUT=myparse
 
 all: $(OUTPUT)
 
-$(OUTPUT): $(OBJ)/main.o $(OBJ)/util.o $(OBJ)/ast.o $(OBJ)/calctree.o $(OBJ)/castast.o $(OBJ)/st.o $(OBJ)/parser.o $(OBJ)/scanner.o
+$(OUTPUT): $(OBJ)/main.o $(OBJ)/util.o $(OBJ)/ast.o $(OBJ)/calctree.o $(OBJ)/castast.o $(OBJ)/st.o $(OBJ)/itr.o $(OBJ)/parser.o $(OBJ)/scanner.o
 	${CC} -o $(OUTPUT) $(OBJ)/*.o -I$(INC) -I$(INC2) ${PARAM} ${LLVMLIB}
 
 $(OBJ)/main.o: main.cpp $(INC)/ast.hpp
@@ -36,6 +36,9 @@ $(OBJ)/castast.o: $(SRC)/castast.cpp $(INC)/ast.hpp
 	
 $(OBJ)/st.o: $(SRC)/st.cpp $(INC)/ast.hpp $(INC)/st.hpp
 	${CC} -c -o $(OBJ)/st.o $(SRC)/st.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
+
+$(OBJ)/itr.o: $(SRC)/itr.cpp $(INC)/ast.hpp $(INC)/st.hpp
+	${CC} -c -o $(OBJ)/itr.o $(SRC)/itr.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 
 $(OBJ)/parser.o: $(SYN)/parser.y $(INC)/ast.hpp $(INC)/st.hpp $(INC)/util.hpp
 	${BISON} --defines=$(INC)/parser.hpp --output=$(SRC)/parser.cpp $(SYN)/parser.y
