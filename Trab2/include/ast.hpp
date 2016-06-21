@@ -51,7 +51,7 @@ public:
 	// setters
 	void setType(Types::Type type){_type=type;}
 	void setNext(Node *next){_next=next;}
-	void setError(bool err){_error=err;}
+	void setError(bool err);
 protected:
 	Types::Type _type;
 	Node* _next;

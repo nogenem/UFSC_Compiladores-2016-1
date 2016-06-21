@@ -33,17 +33,22 @@ void ITR::execExpr(AST::Node *node, bool print/*=false*/){
 }
 
 void ITR::_print(int value, Types::Type type){
+	std::cout << ">> ";
 	switch (type) {
 		case Types::int_t:
-			std::cout << ">> " << value << "\n";
+			std::cout << value;
 			break;
 		case Types::bool_t:
-			std::cout << ">> " << (value==1?"true":"false") << "\n";
+			std::cout << (value==0?"false":"true");
 			break;
 		case Types::unknown_t:
-			std::cout << ">> " << "nil\n";
+			std::cout << "nil";
+			break;
+		case Types::arr_t:
+			std::cout << "array";
 			break;
 		default:
 			break;
 	}
+	std::cout << std::endl;
 }

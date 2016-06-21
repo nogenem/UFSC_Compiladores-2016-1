@@ -5,7 +5,7 @@
  *      Author: Gilne
  */
 
-#include "ast.hpp"
+#include "../include/ast.hpp"
 
 using namespace AST;
 
@@ -52,6 +52,13 @@ BinOp::~BinOp(){
 UniOp::~UniOp(){
   if(_right != nullptr)
     delete _right;
+}
+
+// setters
+void Node::setError(bool err){
+	_error = err;
+	if(err)
+		setType(Types::unknown_t);
 }
 
 // virtual funcs

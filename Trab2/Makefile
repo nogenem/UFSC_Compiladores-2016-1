@@ -16,7 +16,7 @@ OUTPUT=myparse
 
 all: $(OUTPUT)
 
-$(OUTPUT): $(OBJ)/main.o $(OBJ)/util.o $(OBJ)/ast.o $(OBJ)/calctree.o $(OBJ)/castast.o $(OBJ)/st.o $(OBJ)/itr.o $(OBJ)/parser.o $(OBJ)/scanner.o
+$(OUTPUT): $(OBJ)/main.o $(OBJ)/util.o $(OBJ)/ast.o $(OBJ)/at.o $(OBJ)/ft.o $(OBJ)/calctree.o $(OBJ)/castast.o $(OBJ)/st.o $(OBJ)/itr.o $(OBJ)/parser.o $(OBJ)/scanner.o
 	${CC} -o $(OUTPUT) $(OBJ)/*.o -I$(INC) -I$(INC2) ${PARAM} ${LLVMLIB}
 
 $(OBJ)/main.o: main.cpp $(INC)/ast.hpp
@@ -27,8 +27,14 @@ $(OBJ)/util.o: $(SRC)/util.cpp
 	
 $(OBJ)/ast.o: $(SRC)/ast.cpp $(INC)/ast.hpp
 	${CC} -c -o $(OBJ)/ast.o $(SRC)/ast.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
+
+$(OBJ)/at.o: $(SRC)/at.cpp $(INC)/ast.hpp 
+	${CC} -c -o $(OBJ)/at.o $(SRC)/at.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
+
+$(OBJ)/ft.o: $(SRC)/ft.cpp $(INC)/ast.hpp 
+	${CC} -c -o $(OBJ)/ft.o $(SRC)/ft.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 	
-$(OBJ)/calctree.o: $(SRC)/calctree.cpp $(INC)/ast.hpp
+$(OBJ)/calctree.o: $(SRC)/calctree.cpp $(INC)/ast.hpp $(INC)/at.hpp
 	${CC} -c -o $(OBJ)/calctree.o $(SRC)/calctree.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 	
 $(OBJ)/castast.o: $(SRC)/castast.cpp $(INC)/ast.hpp

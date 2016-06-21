@@ -9,10 +9,13 @@
 #include <string>
 
 #include "../include/ast.hpp"
+#include "../include/at.hpp"
 #include "../include/st.hpp"
 #include "../include/util.hpp"
 
 using namespace AST;
+
+extern AT::ArrayTable arrtab;
 
 int Block::calcTree(ST::SymbolTable *scope){
 	int value = 0;
@@ -52,6 +55,19 @@ int Function::calcTree(ST::SymbolTable *scope){
 }
 
 int Array::calcTree(ST::SymbolTable *scope){
+	AT::Symbol* symbol = arrtab.createArray();
+	auto tmp = _values;
+	int index = 1;//index começa em 1
+	while(tmp != nullptr){
+		// executa a expressão só para fazer as verificações
+		tmp->calcTree(scope);
+		if(!tmp->getError())// só adiciona se não tiver erros
+			symbol->setValue(index, tmp);
+		++index;
+
+		tmp = tmp->getNext();
+	}
+
 	return 0;
 }
 

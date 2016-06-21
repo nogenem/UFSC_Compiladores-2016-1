@@ -3,9 +3,13 @@
 #include "ast.hpp"
 #include "st.hpp"
 #include "util.hpp"
+#include "at.hpp"
 	
 AST::Block *programRoot;
+
+// Tables
 ST::SymbolTable *symtab = new ST::SymbolTable(nullptr);
+AT::ArrayTable arrtab;
 
 extern int yylex();
 extern void yyerror(const char* s, ...);
@@ -13,6 +17,8 @@ extern void yyerror(const char* s, ...);
 /*
 	TODO:
 		fazer checagem de declaracao na ST?
+		
+		provavelmente vou ter que setar o tipo do bloco para o tipo do retorno da funçao....
 		
 		adicionar token nil?
 		mudar assinatura do método 'Symbol::setType'?
@@ -38,7 +44,7 @@ extern void yyerror(const char* s, ...);
 
 %type <block> block fblock fblockend fchunk
 %type <node> line fline assign decl namelist varlist ret
-%type <node> exprlist exprlist2 expr expr2 term
+%type <node> exprlist exprlist2 expr expr2 term arrterm
 
 %left OR_OPT
 %left AND_OPT
@@ -153,7 +159,7 @@ expr      : term                    { $$ = $1; }
           ;
 
 expr2	  : expr 		{ $$ = $1; }
-		  | arrterm 	{ $$ = nullptr; }
+		  | arrterm 	{ $$ = $1; }
 		  | functerm	{ $$ = nullptr; }
 		  ;
 
@@ -164,8 +170,8 @@ term    : BOOL_V                 { $$ = new AST::Value($1, Types::bool_t); }
         | ID_V '(' exprlist2 ')' { $$ = nullptr; }
         ;
 
-arrterm : '{' exprlist '}'        {}
-        | '{' '}'                 {}
+arrterm : '{' exprlist '}'        { $$ = new AST::Array($2); }
+        | '{' '}'                 { $$ = new AST::Array(nullptr); }
         ;
         
 functerm	: FUN_T '(' exprlist2 ')' fchunk END_T {}

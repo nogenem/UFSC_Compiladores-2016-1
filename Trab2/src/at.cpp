@@ -7,6 +7,7 @@
 
 #include "../include/at.hpp"
 
+
 using namespace AT;
 
 // Symbol
@@ -27,6 +28,14 @@ void Symbol::setValue(int index, AST::Node *value){
 // Array Table
 int ArrayTable::_n = 0;
 
+// other funcs
+Symbol* ArrayTable::createArray(){
+	auto symbol = new Symbol();
+	_addrs[_n++] = symbol;
+	return symbol;
+}
+
+// getters
 Symbol* ArrayTable::getArray(int addr){
 	if(_addrs.find(addr) != _addrs.end())
 		return _addrs[addr];
