@@ -8,15 +8,41 @@
 #pragma once
 
 #include <map>
+
 #include "ast.hpp"
 
 namespace AT {
-	typedef std::map<int,int> arrValues;
-	static std::map<int,arrValues> _table;
-	static int _arrN=0;//numero de arrays
 
-	int getValue(int arrAddr, int index);
-	void setValue(int arrAddr, int index, int value);
+typedef std::map<int,AST::Node*> ArrValues;
 
-	void createArray(AST::Node *values);
+class Symbol {
+public:
+	// constructors
+	Symbol(){}
+
+	// getters
+	AST::Node* getValue(int index);
+	// setters
+	void setValue(int index, AST::Node* value);
+private:
+	ArrValues _values;
+};
+
+typedef std::map<int, Symbol*> ArrAddrs;
+
+class ArrayTable {
+public:
+	// constructors
+	ArrayTable(){}
+
+	// other funcs
+
+	// getters
+	Symbol* getArray(int addr);
+	// setters
+
+private:
+	ArrAddrs _addrs;
+	static int _n;
+};
 }

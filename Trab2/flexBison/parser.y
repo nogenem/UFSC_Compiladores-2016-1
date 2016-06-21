@@ -12,6 +12,7 @@ extern void yyerror(const char* s, ...);
 
 /*
 	TODO:
+		fazer checagem de declaracao na ST?
 		
 		adicionar token nil?
 		mudar assinatura do método 'Symbol::setType'?
