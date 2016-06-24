@@ -18,54 +18,61 @@ using namespace AST;
 
 extern AT::ArrayTable arrtab;
 
+/**
+ * Todas as funções desse arquivo são responsaveis por
+ *  calcular o valor da sua subarvore, o jeito de calcular
+ *  este valor varia de classe para classe.
+ */
+
 int Block::calcTree(ST::SymbolTable *scope){
 	int value = 0;
 	for(auto& line : _lines){
 		value = line->calcTree(_scope);
 		if(line->getNodeType() == AST::return_nt)
-			return value;//retorno o valor do 1* 'return' encontrado
+			return value;//retorna o valor do 1* 'return' encontrado
 	}
 	return 0;
 }
 
 int Variable::calcTree(ST::SymbolTable *scope){
-	if(getError())
-		return 0;
-
 	auto symbol = scope->getSymbol(getId());
-	auto stype = symbol->getType();
-	auto index = getIndex();
-	if(stype != Types::arr_t && index != nullptr){
-		Errors::print(Errors::attempt_index, getId(), Types::mascType[stype]);
-		setError(true);
-	}else if(index != nullptr){
-		int iv = index->calcTree(scope);
+	bool hasSymbol = symbol!=nullptr;
 
-		if(index->getError()){
+	auto stype  = hasSymbol?symbol->getType() :Types::unknown_t;
+	auto svalue = hasSymbol?symbol->getValue():0;
+
+	auto index = getIndex();
+	int iv = index!=nullptr?index->calcTree(scope):0;
+
+	if(index != nullptr){
+		if(index->getType() != Types::int_t){
+			Errors::print(Errors::index_wrong_type, Types::mascType[index->getType()]);
 			setError(true);
-			return 0;
 		}
+
+		if(stype != Types::arr_t){
+			Errors::print(Errors::attempt_index, getId(), Types::mascType[stype]);
+			setError(true);
+		}
+
+		if(!hasSymbol || getError())
+			return 0;
 
 		auto arr = arrtab.getArray(symbol->getValue());
 		auto val = arr->getValue(iv);
+		int v = val!=nullptr?val->calcTree(scope):0;
 
-		if(val == nullptr){
+		if(val == nullptr || val->getError())
 			setError(true);
-			return 0;
-		}
-
-		int v = val->calcTree(scope);
-
-		if(val->getError()){
-			setError(true);
-		}else{
+		else
 			setType(val->getType());
-			return v;
-		}
+
+		return v;
 	}else{
-		setType(symbol->getType());
-		return symbol->getValue();
+		setType(stype);
+		return svalue;
 	}
+
 	return 0;
 }
 
@@ -82,19 +89,22 @@ int Function::calcTree(ST::SymbolTable *scope){
 }
 
 int Array::calcTree(ST::SymbolTable *scope){
+	// Cria a nova array
 	AT::Symbol* symbol = arrtab.createArray();
 	auto tmp = _values;
 	int index = 1;//index começa em 1
+	// Adiciona todos os valores no simbolo da array
 	while(tmp != nullptr){
-		// executa a expressão só para fazer as verificações
+		// Executa a expressão só para fazer as verificações
 		tmp->calcTree(scope);
-		if(!tmp->getError())// só adiciona se não tiver erros
+		if(!tmp->getError())// Só adiciona se não tiver erros
 			symbol->setValue(index, tmp);
 		++index;
 
 		tmp = tmp->getNext();
 	}
 
+	// Retorna o endereço da nova array criada
 	return symbol->getAddr();
 }
 
@@ -109,11 +119,6 @@ int BinOp::_calcAssignArr(ST::SymbolTable *scope, int rv){
 	auto index = var->getIndex();
 	int iv = index->calcTree(scope);
 
-	if(index->getType() != Types::int_t){
-		Errors::print(Errors::index_wrong_type, Types::mascType[index->getType()]);
-		setError(true);
-		return 0;
-	}
 	if(getType() == Types::unknown_t || var->getError()
 			|| index->getError()){
 		setError(true);
@@ -147,8 +152,7 @@ int BinOp::calcTree(ST::SymbolTable *scope){
 
 		if(!left->getError()){
 			auto symbol = scope->getSymbol(var->getId());
-			symbol->setValue(rv);
-			symbol->setType(right->getType());
+			symbol->setValue(rv, right->getType());
 			return rv;
 		}
 	}

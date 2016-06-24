@@ -33,15 +33,14 @@ public:
 	~Symbol(){}
 
 	// getters
-	const Types::Type getType(){return _type;}
-	const int getValue(){return _value;}
+	Types::Type getType(){return _type;}
+	int getValue(){return _value;}
 	// setters
-	void setType(Types::Type type){_type=type;}
-	void setValue(int value){_value=value;}
+	void setValue(int value, Types::Type type);
 private:
 	Types::Type _type;
 	// value booleano, inteiro ou 'endereço'
-	//  de um arranjo e uma função
+	//  de um arranjo ou uma função
 	int _value;
 };
 
@@ -70,7 +69,6 @@ public:
 private:
 	// other funcs
 	AST::Node* _newVar(AST::Node *varlist);
-	AST::Node* _assignVar(AST::Variable *var, AST::Node *expr);
 private:
 	SymbolList _entryList;
 	SymbolTable *_previous;

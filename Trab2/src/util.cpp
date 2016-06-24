@@ -14,6 +14,13 @@ extern int yylineno;
 
 using namespace Types;
 
+/**
+ * Função responsavel por verificar se o tipo do
+ *  operando bate com o tipo da operação unária.
+ *
+ * @param op	Operação que se esta verificando
+ * @param right	Tipo do operando
+ */
 Type Types::unType(Ops::Operation op, Type right){
 	auto rtxt = mascType[right];
 	Type ret;
@@ -42,13 +49,21 @@ Type Types::unType(Ops::Operation op, Type right){
 	return ret;
 }
 
+/**
+ * Função responsavel por verificar se os tipos dos
+ *  operandos bate com o tipo da operação binaria.
+ *
+ * @param left	Tipo do operando da esquerda
+ * @param op	Operação que se esta verificando
+ * @param right	Tipo do operando da direita
+ */
 Type Types::binType(Type left, Ops::Operation op, Type right){
 	auto ltxt = mascType[left];
 	auto rtxt = mascType[right];
 	Type ret;
 	switch (op) {
 		case Ops::assign:
-			ret = left;
+			ret = right;
 			break;
 		case Ops::plus:
 		case Ops::b_minus:
@@ -110,6 +125,12 @@ Type Types::binType(Type left, Ops::Operation op, Type right){
 using namespace Errors;
 
 // ERRORS
+/**
+ * Função responsavel por printar os erros
+ *
+ * @param error	Erro que se quer printar
+ * @param ...	Valores que serão usados na mensagem de erro
+ */
 void Errors::print(ErrorType error, ...){
 	va_list ap;
 	va_start(ap, error);

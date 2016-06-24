@@ -14,8 +14,16 @@
 
 using namespace ITR;
 
+/**
+ * Função responsavel por executar e, caso especificado,
+ *  printar o resultado da expressão passada
+ *
+ * @param node	Nodo da expressão que se quer executar
+ * @param print	TRUE caso queria printar o resultado da expressão
+ * 				FALSE caso contrario
+ */
 void ITR::execExpr(AST::Node *node, bool print/*=false*/){
-	// Soh pode executar caso esteja no escopo
+	// Só pode executar caso esteja no escopo
 	//  global
 	if(!symtab->isGlobal())
 		return;
@@ -23,15 +31,21 @@ void ITR::execExpr(AST::Node *node, bool print/*=false*/){
 	AST::Node *tmp = node;
 	int v = 0;
 	while(tmp != nullptr){
-		if(!tmp->getError()){
-			v = tmp->calcTree(symtab);
-			if(print && !tmp->getError())
-				_print(v, tmp->getType());
-		}
+		v = tmp->calcTree(symtab);
+		if(print)
+			_print(v, tmp->getType());
+
 		tmp = tmp->getNext();
 	}
 }
 
+/**
+ * Função responsavel por printar um valor resultante
+ *  de uma expressão.
+ *
+ * @param value	Valor a ser printado
+ * @param type	Tipo do valor a ser printado
+ */
 void ITR::_print(int value, Types::Type type){
 	std::cout << ">> ";
 	switch (type) {

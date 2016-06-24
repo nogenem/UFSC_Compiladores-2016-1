@@ -64,6 +64,13 @@ void Node::setError(bool err){
 }
 
 // virtual funcs
+/**
+ * Função que retorna uma string representando o tipo
+ *  do Nodo dependendo do parametro masc
+ *
+ * @param masc	TRUE caso queria a representação masculina do tipo
+ * 				FALSE caso queria a representação feminina do tipo
+ */
 const char* Node::getTypeTxt(bool masc){
 	if(masc)
 		return Types::mascType[_type];

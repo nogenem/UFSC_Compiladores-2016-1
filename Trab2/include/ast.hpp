@@ -22,9 +22,6 @@ namespace AST {
 enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
 	  function_nt, return_nt, binop_nt, uniop_nt };
 
-// Possiveis usos de uma variavel
-enum Use { unknown_u, attr_u, decl_u, param_u, read_u };
-
 class Node;
 
 typedef std::vector<Node*> NodeList; //List of ASTs
@@ -45,7 +42,7 @@ public:
 	virtual const char* getTypeTxt(bool masc);
 
 	// getters
-	const Types::Type getType(){return _type;}
+	Types::Type getType(){return _type;}
 	Node* getNext(){return _next;}
 	bool getError(){return _error;}
 	// setters
@@ -83,8 +80,8 @@ protected:
 class Variable : public Node {
 public:
 	// constructors
-	Variable(std::string id, Node *index, Node *params, Use use, Types::Type type, Node *next):
-		_id(id), _index(index), _params(params), _use(use), Node(type,next){}
+	Variable(std::string id, Node *index, Node *params, Types::Type type, Node *next):
+		_id(id), _index(index), _params(params), Node(type,next){}
 	// destructors
 	~Variable();
 
@@ -99,17 +96,14 @@ public:
 	const char* getId(){return _id.c_str();}
 	Node* getIndex(){return _index;}
 	Node* getParams(){return _params;}
-	const Use getUse(){return _use;}
 	// setters
 	void setId(std::string id){_id=id;}
 	void setIndex(Node *index){_index=index;}
 	void setParams(Node *params){_params=params;}
-	void setUse(Use use){_use=use;}
 protected:
 	std::string _id;
 	Node *_index;
 	Node *_params;
-	Use _use;
 };
 
 class Value : public Node {
@@ -215,7 +209,7 @@ public:
 
 	// getters
 	Node* getLeft(){return _left;}
-	const Ops::Operation getOp(){return _op;}
+	Ops::Operation getOp(){return _op;}
 	Node* getRight(){return _right;}
 	// setters
 	void setLeft(Node *node){_left=node;}
@@ -246,7 +240,7 @@ public:
 
 	// getters
 	Node* getRight(){return _right;}
-	const Ops::Operation getOp(){return _op;}
+	Ops::Operation getOp(){return _op;}
 	// setters
 	void setOp(Ops::Operation op){_op=op;}
 	void setRight(Node *node){_right=node;}
