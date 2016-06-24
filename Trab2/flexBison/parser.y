@@ -122,14 +122,14 @@ func    : FUN_T ID_V '(' namelist ')' fchunk  {}
         | FUN_T ID_V '(' ')' fchunk           {}
         ;
 
-namelist  : ID_V              { $$ = new AST::Variable($1,nullptr,AST::unknown_u,Types::unknown_t,nullptr); }
-          | ID_V ',' namelist { $$ = new AST::Variable($1,nullptr,AST::unknown_u,Types::unknown_t,$3); }
+namelist  : ID_V              { $$ = new AST::Variable($1,nullptr,nullptr,AST::unknown_u,Types::unknown_t,nullptr); }
+          | ID_V ',' namelist { $$ = new AST::Variable($1,nullptr,nullptr,AST::unknown_u,Types::unknown_t,$3); }
           ;
 
-varlist   : ID_V                          { $$ = new AST::Variable($1,nullptr,AST::unknown_u,Types::unknown_t,nullptr); }
-          | ID_V '[' expr ']'             { $$ = nullptr; }
-          | ID_V ',' varlist              { $$ = new AST::Variable($1,nullptr,AST::unknown_u,Types::unknown_t,$3); }
-          | ID_V '[' expr ']' ',' varlist { $$ = nullptr; }
+varlist   : ID_V                          { $$ = new AST::Variable($1,nullptr,nullptr,AST::unknown_u,Types::unknown_t,nullptr); }
+          | ID_V '[' expr ']'             { $$ = new AST::Variable($1,$3,nullptr,AST::unknown_u,Types::unknown_t,nullptr); }
+          | ID_V ',' varlist              { $$ = new AST::Variable($1,nullptr,nullptr,AST::unknown_u,Types::unknown_t,$3); }
+          | ID_V '[' expr ']' ',' varlist { $$ = new AST::Variable($1,$3,nullptr,AST::unknown_u,Types::unknown_t,$6); }
           ;
 
 exprlist  : expr              { $$ = $1; }
@@ -166,7 +166,7 @@ expr2	  : expr 		{ $$ = $1; }
 term    : BOOL_V                 { $$ = new AST::Value($1, Types::bool_t); }
         | INT_V                  { $$ = new AST::Value($1, Types::int_t); }
         | ID_V                   { $$ = symtab->useVar($1, nullptr); }
-        | ID_V '[' expr ']'      { $$ = nullptr; }
+        | ID_V '[' expr ']'      { $$ = symtab->useVar($1, $3); }
         | ID_V '(' exprlist2 ')' { $$ = nullptr; }
         ;
 

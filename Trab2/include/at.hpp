@@ -18,7 +18,7 @@ typedef std::map<int,AST::Node*> ArrValues;
 class Symbol {
 public:
 	// constructors
-	Symbol(){ ++_refs; }
+	Symbol(int addr):_addr(addr){ ++_refs; }
 
 	// other funcs
 	void addRef(){++_refs;}
@@ -27,11 +27,13 @@ public:
 	// getters
 	AST::Node* getValue(int index);
 	int geRefs(){return _refs;}
+	int getAddr(){return _addr;}
 	// setters
 	void setValue(int index, AST::Node* value);
 private:
 	ArrValues _values;
 	int _refs;//numero de referencias a este array
+	int _addr;//'Endereço' deste array
 };
 
 typedef std::map<int, Symbol*> ArrAddrs;

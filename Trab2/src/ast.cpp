@@ -21,8 +21,10 @@ Block::~Block(){
 }
 
 Variable::~Variable(){
-	if(_extra != nullptr)
-		delete _extra;
+	if(_index != nullptr)
+		delete _index;
+	if(_params != nullptr)
+		delete _params;
 }
 
 Array::~Array(){

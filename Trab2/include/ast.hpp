@@ -83,8 +83,8 @@ protected:
 class Variable : public Node {
 public:
 	// constructors
-	Variable(std::string id, Node *extra, Use use, Types::Type type, Node *next):
-		_id(id), _extra(extra), _use(use), Node(type,next){}
+	Variable(std::string id, Node *index, Node *params, Use use, Types::Type type, Node *next):
+		_id(id), _index(index), _params(params), _use(use), Node(type,next){}
 	// destructors
 	~Variable();
 
@@ -97,17 +97,18 @@ public:
 
 	// getters
 	const char* getId(){return _id.c_str();}
-	Node* getExtra(){return _extra;}
+	Node* getIndex(){return _index;}
+	Node* getParams(){return _params;}
 	const Use getUse(){return _use;}
 	// setters
 	void setId(std::string id){_id=id;}
-	void setExtra(Node *extra){_extra=extra;}
+	void setIndex(Node *index){_index=index;}
+	void setParams(Node *params){_params=params;}
 	void setUse(Use use){_use=use;}
 protected:
 	std::string _id;
-	// pode ser o index do arranjo ou
-	//  os parametros da função
-	Node *_extra;// por falta de nome melhor...
+	Node *_index;
+	Node *_params;
 	Use _use;
 };
 
@@ -220,6 +221,8 @@ public:
 	void setLeft(Node *node){_left=node;}
 	void setOp(Ops::Operation op){_op=op;}
 	void setRight(Node *node){_right=node;}
+protected:
+	int _calcAssignArr(ST::SymbolTable *scope, int rv);
 protected:
 	Node *_left;
 	Ops::Operation _op;

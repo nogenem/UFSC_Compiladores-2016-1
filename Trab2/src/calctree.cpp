@@ -6,6 +6,7 @@
  */
 
 #include <cstdlib>
+#include <iostream>
 #include <string>
 
 #include "../include/ast.hpp"
@@ -32,12 +33,38 @@ int Variable::calcTree(ST::SymbolTable *scope){
 		return 0;
 
 	auto symbol = scope->getSymbol(getId());
-	if(symbol != nullptr){
+	auto stype = symbol->getType();
+	auto index = getIndex();
+	if(stype != Types::arr_t && index != nullptr){
+		Errors::print(Errors::attempt_index, getId(), Types::mascType[stype]);
+		setError(true);
+	}else if(index != nullptr){
+		int iv = index->calcTree(scope);
+
+		if(index->getError()){
+			setError(true);
+			return 0;
+		}
+
+		auto arr = arrtab.getArray(symbol->getValue());
+		auto val = arr->getValue(iv);
+
+		if(val == nullptr){
+			setError(true);
+			return 0;
+		}
+
+		int v = val->calcTree(scope);
+
+		if(val->getError()){
+			setError(true);
+		}else{
+			setType(val->getType());
+			return v;
+		}
+	}else{
 		setType(symbol->getType());
 		return symbol->getValue();
-	}else{
-		Errors::print(Errors::without_declaration, getId());
-		setError(true);
 	}
 	return 0;
 }
@@ -68,13 +95,40 @@ int Array::calcTree(ST::SymbolTable *scope){
 		tmp = tmp->getNext();
 	}
 
-	return 0;
+	return symbol->getAddr();
 }
 
 int Return::calcTree(ST::SymbolTable *scope){
 	int value = getExpr()->calcTree(scope);
 	setType(getExpr()->getType());
 	return value;
+}
+
+int BinOp::_calcAssignArr(ST::SymbolTable *scope, int rv){
+	auto var = Variable::cast(getLeft());
+	auto index = var->getIndex();
+	int iv = index->calcTree(scope);
+
+	if(index->getType() != Types::int_t){
+		Errors::print(Errors::index_wrong_type, Types::mascType[index->getType()]);
+		setError(true);
+		return 0;
+	}
+	if(getType() == Types::unknown_t || var->getError()
+			|| index->getError()){
+		setError(true);
+		return 0;
+	}
+
+	auto symbol = scope->getSymbol(var->getId());
+	auto arr = arrtab.getArray(symbol->getValue());
+	if(arr == nullptr){
+		setError(true);
+		return 0;
+	}else
+		arr->setValue(iv, getRight());
+
+	return rv;
 }
 
 int BinOp::calcTree(ST::SymbolTable *scope){
@@ -86,12 +140,17 @@ int BinOp::calcTree(ST::SymbolTable *scope){
 
 	setType(Types::binType(left->getType(), getOp(), right->getType()));
 
-	if(getOp()==Ops::assign && !left->getError()){
+	if(getOp() == Ops::assign){
 		auto var = Variable::cast(left);
-		auto symbol = scope->getSymbol(var->getId());
-		symbol->setValue(rv);
-		symbol->setType(right->getType());
-		return rv;
+		if(var->getIndex() != nullptr)
+			return _calcAssignArr(scope, rv);
+
+		if(!left->getError()){
+			auto symbol = scope->getSymbol(var->getId());
+			symbol->setValue(rv);
+			symbol->setType(right->getType());
+			return rv;
+		}
 	}
 
 	if(getType() == Types::unknown_t || left->getError()){

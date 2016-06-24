@@ -7,6 +7,8 @@
 
 #include "../include/st.hpp"
 
+#include <iostream>
+
 #include "../include/ast.hpp"
 
 using namespace ST;
@@ -97,11 +99,14 @@ AST::Node* SymbolTable::useVar(std::string id, AST::Node *index){
 	auto symbol = getSymbol(id);
 	bool error = false;
 
-	// Falta checar o index!
 	if(symbol != nullptr)
 		type = symbol->getType();
+	else{
+		Errors::print(Errors::without_declaration, id.c_str());
+		error = true;
+	}
 
-	auto var = new AST::Variable(id,index,AST::read_u,type,nullptr);
+	auto var = new AST::Variable(id,index,nullptr,AST::read_u,type,nullptr);
 	var->setError(error);
 	return var;
 }

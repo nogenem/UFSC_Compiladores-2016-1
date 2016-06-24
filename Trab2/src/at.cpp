@@ -8,6 +8,7 @@
 #include "../include/at.hpp"
 
 
+
 using namespace AT;
 
 // Symbol
@@ -30,8 +31,9 @@ int ArrayTable::_n = 0;
 
 // other funcs
 Symbol* ArrayTable::createArray(){
-	auto symbol = new Symbol();
-	_addrs[_n++] = symbol;
+	int n = _n++;
+	auto symbol = new Symbol(n);
+	_addrs[n] = symbol;
 	return symbol;
 }
 
