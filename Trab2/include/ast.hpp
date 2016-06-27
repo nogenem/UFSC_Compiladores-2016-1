@@ -164,6 +164,9 @@ public:
 
 	// static funcs
 	static Array* cast(Node *node);
+
+	// getters
+	Node* getValues(){return _values;}
 protected:
 	Node *_values;
 };

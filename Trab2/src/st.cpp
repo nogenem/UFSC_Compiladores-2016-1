@@ -24,11 +24,17 @@ using namespace ST;
  * @param type		Tipo deste novo valor
  */
 void ST::Symbol::setValue(int value, Types::Type type) {
+	// Adiciona e remove referencia a arranjos
+	// Pequena proteção contra memory leak
 	if(_type == Types::arr_t){
-		if(type != Types::arr_t || value != _value){
+		if(type != Types::arr_t)
+			arrtab.minusRef(_value);
+		else if(value != _value){
 			arrtab.minusRef(_value);
 			arrtab.plusRef(value);
 		}
+	}else if(type == Types::arr_t){
+		arrtab.plusRef(value);
 	}
 	_value = value;
 	_type = type;
@@ -72,10 +78,10 @@ void SymbolTable::addSymbol(std::string id, Symbol *newsymbol){
  * @param exprlist	Lista de expressões
  */
 AST::Node* SymbolTable::declVar(AST::Node *varlist, AST::Node *exprlist){
-	// Só declara var, não tem atribuição
+	// Apenas declaração, sem atribuição
 	if(exprlist == nullptr){
 		return _newVar(varlist);
-	}else{// Possui no minimo uma atribuição
+	}else{// Declaração com no minimo uma atribuição
 		_newVar(varlist);
 		return assignVar(varlist, exprlist);
 	}

@@ -16,11 +16,11 @@ extern void yyerror(const char* s, ...);
 
 /*
 	TODO:
-		fazer print de arrays?
-		
-		provavelmente vou ter que setar o tipo do bloco para o tipo do retorno da funçao....
-		
+	
+	
 		adicionar token nil?
+		
+		fazer print de arrays? [muito trampo...]
 */
 
 %}

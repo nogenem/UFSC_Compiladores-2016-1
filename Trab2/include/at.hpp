@@ -19,7 +19,10 @@ class Symbol {
 public:
 	// constructors
 	Symbol(int addr):
-		_addr(addr), _refs(1){ }
+		_addr(addr), _refs(0){ }
+
+	// destructors
+	~Symbol(){ }
 
 	// getters
 	AST::Node* getValue(int index);

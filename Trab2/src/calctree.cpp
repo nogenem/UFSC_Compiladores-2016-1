@@ -6,7 +6,6 @@
  */
 
 #include <cstdlib>
-#include <iostream>
 #include <string>
 
 #include "../include/ast.hpp"
@@ -28,8 +27,10 @@ int Block::calcTree(ST::SymbolTable *scope){
 	int value = 0;
 	for(auto& line : _lines){
 		value = line->calcTree(_scope);
-		if(line->getNodeType() == AST::return_nt)
+		if(line->getNodeType() == AST::return_nt){
+			setType(line->getType());
 			return value;//retorna o valor do 1* 'return' encontrado
+		}
 	}
 	return 0;
 }
@@ -62,10 +63,13 @@ int Variable::calcTree(ST::SymbolTable *scope){
 		auto val = arr->getValue(iv);
 		int v = val!=nullptr?val->calcTree(scope):0;
 
-		if(val == nullptr || val->getError())
-			setError(true);
-		else
-			setType(val->getType());
+		if(val != nullptr){
+			if(val->getError())
+				setError(true);
+			else
+				setType(val->getType());
+		}else
+			setType(Types::unknown_t);
 
 		return v;
 	}else{
@@ -130,8 +134,9 @@ int BinOp::_calcAssignArr(ST::SymbolTable *scope, int rv){
 	if(arr == nullptr){
 		setError(true);
 		return 0;
-	}else
+	}else{
 		arr->setValue(iv, getRight());
+	}
 
 	return rv;
 }

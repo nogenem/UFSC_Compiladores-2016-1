@@ -12,6 +12,8 @@
 using namespace AT;
 
 // Symbol
+
+// getters
 /**
  * Função que retorna o valor do indice do arranjo
  *
@@ -24,6 +26,7 @@ AST::Node* Symbol::getValue(int index){
 		return nullptr;
 }
 
+// setters
 /**
  * Função que altera o valor de um indice do arranjo
  *
@@ -38,6 +41,7 @@ void Symbol::setValue(int index, AST::Node *value){
 }
 
 // Array Table
+
 int ArrayTable::_n = 0;
 
 // other funcs

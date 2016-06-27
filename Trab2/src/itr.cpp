@@ -5,12 +5,10 @@
  *      Author: Gilne
  */
 
-#include "../include/itr.hpp"
-
+#include <ast.hpp>
+#include <itr.hpp>
+#include <st.hpp>
 #include <iostream>
-
-#include "../include/ast.hpp"
-#include "../include/st.hpp"
 
 using namespace ITR;
 

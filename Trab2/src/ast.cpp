@@ -77,4 +77,3 @@ const char* Node::getTypeTxt(bool masc){
 	else
 		return Types::femType[_type];
 }
-
