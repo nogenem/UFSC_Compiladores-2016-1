@@ -71,11 +71,13 @@ namespace Errors {
 			"semantico: operacao %s espera %s mas recebeu %s.",//op_wrong_type
 			"semantico: divisao por zero.",//div_zero
 			"semantico: tentativa de indexar variavel %s (um valor %s).",//attempt_index
-			"semantico: indice de tipo %s."//index_wrong_type
+			"semantico: indice de tipo %s.",//index_wrong_type
+			"semantico: arranjos apenas aceitam inteiros ou booleanos."//arr_type_not_allowed
 	};
 
 	enum ErrorType{ syntax_error, unknown_symbol, without_declaration,
-					redefinition, op_wrong_type, div_zero, attempt_index, index_wrong_type };
+					redefinition, op_wrong_type, div_zero, attempt_index, index_wrong_type,
+					arr_type_not_allowed };
 
 	void print(ErrorType error, ...);
 }

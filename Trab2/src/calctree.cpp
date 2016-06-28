@@ -101,6 +101,10 @@ int Array::calcTree(ST::SymbolTable *scope){
 	while(tmp != nullptr){
 		// Executa a expressão só para fazer as verificações
 		tmp->calcTree(scope);
+		if(tmp->getType() == Types::arr_t || tmp->getType() == Types::func_t){
+			setError(true);
+			Errors::print(Errors::arr_type_not_allowed);
+		}
 		if(!tmp->getError())// Só adiciona se não tiver erros
 			symbol->setValue(index, tmp);
 		++index;
@@ -118,12 +122,16 @@ int Return::calcTree(ST::SymbolTable *scope){
 	return value;
 }
 
-int BinOp::_calcAssignArr(ST::SymbolTable *scope, int rv){
+int BinOp::_calcAssignArr(ST::SymbolTable *scope, Types::Type rtype, int rv){
 	auto var = Variable::cast(getLeft());
 	auto index = var->getIndex();
 	int iv = index->calcTree(scope);
 
-	if(getType() == Types::unknown_t || var->getError()
+	if(rtype == Types::arr_t){
+		setError(true);
+		Errors::print(Errors::arr_type_not_allowed);
+		return 0;
+	}else if(getType() == Types::unknown_t || var->getError()
 			|| index->getError()){
 		setError(true);
 		return 0;
@@ -153,7 +161,7 @@ int BinOp::calcTree(ST::SymbolTable *scope){
 	if(getOp() == Ops::assign){
 		auto var = Variable::cast(left);
 		if(var->getIndex() != nullptr)
-			return _calcAssignArr(scope, rv);
+			return _calcAssignArr(scope, right->getType(), rv);
 
 		if(!left->getError()){
 			auto symbol = scope->getSymbol(var->getId());

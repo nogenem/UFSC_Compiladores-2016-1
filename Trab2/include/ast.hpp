@@ -219,7 +219,7 @@ public:
 	void setOp(Ops::Operation op){_op=op;}
 	void setRight(Node *node){_right=node;}
 protected:
-	int _calcAssignArr(ST::SymbolTable *scope, int rv);
+	int _calcAssignArr(ST::SymbolTable *scope, Types::Type rtype, int rv);
 protected:
 	Node *_left;
 	Ops::Operation _op;

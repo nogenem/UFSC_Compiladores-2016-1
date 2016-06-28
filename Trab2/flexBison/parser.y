@@ -42,7 +42,7 @@ extern void yyerror(const char* s, ...);
 
 %type <block> block fblock fblockend fchunk
 %type <node> line fline assign decl namelist varlist ret
-%type <node> exprlist exprlist2 expr expr2 term arrterm
+%type <node> exprlist2 expr expr2 term arrterm
 
 %left OR_OPT
 %left AND_OPT
@@ -129,10 +129,6 @@ varlist   : ID_V                          { $$ = new AST::Variable($1,nullptr,nu
           | ID_V ',' varlist              { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,$3); }
           | ID_V '[' expr ']' ',' varlist { $$ = new AST::Variable($1,$3,nullptr,Types::unknown_t,$6); }
           ;
-
-exprlist  : expr              { $$ = $1; }
-          | expr ',' exprlist { $$ = $1; $$->setNext($3); }
-          ;
           
 exprlist2  : expr2               { $$ = $1; }
            | expr2 ',' exprlist2 { $$ = $1; $$->setNext($3); }
@@ -168,7 +164,7 @@ term    : BOOL_V                 { $$ = new AST::Value($1, Types::bool_t); }
         | ID_V '(' exprlist2 ')' { $$ = nullptr; }
         ;
 
-arrterm : '{' exprlist '}'        { $$ = new AST::Array($2); }
+arrterm : '{' exprlist2 '}'       { $$ = new AST::Array($2); }
         | '{' '}'                 { $$ = new AST::Array(nullptr); }
         ;
         
