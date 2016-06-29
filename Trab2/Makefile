@@ -22,16 +22,16 @@ $(OUTPUT): $(OBJ)/main.o $(OBJ)/util.o $(OBJ)/ast.o $(OBJ)/at.o $(OBJ)/ft.o $(OB
 $(OBJ)/main.o: main.cpp $(INC)/ast.hpp
 	${CC} -c -o $(OBJ)/main.o main.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 
-$(OBJ)/util.o: $(SRC)/util.cpp
+$(OBJ)/util.o: $(SRC)/util.cpp $(INC)/util.hpp
 	${CC} -c -o $(OBJ)/util.o $(SRC)/util.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 	
 $(OBJ)/ast.o: $(SRC)/ast.cpp $(INC)/ast.hpp
 	${CC} -c -o $(OBJ)/ast.o $(SRC)/ast.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 
-$(OBJ)/at.o: $(SRC)/at.cpp $(INC)/ast.hpp 
+$(OBJ)/at.o: $(SRC)/at.cpp $(INC)/at.hpp  $(INC)/ast.hpp 
 	${CC} -c -o $(OBJ)/at.o $(SRC)/at.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 
-$(OBJ)/ft.o: $(SRC)/ft.cpp $(INC)/ast.hpp 
+$(OBJ)/ft.o: $(SRC)/ft.cpp $(INC)/ft.hpp $(INC)/ast.hpp 
 	${CC} -c -o $(OBJ)/ft.o $(SRC)/ft.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 	
 $(OBJ)/calctree.o: $(SRC)/calctree.cpp $(INC)/ast.hpp $(INC)/at.hpp
@@ -40,10 +40,10 @@ $(OBJ)/calctree.o: $(SRC)/calctree.cpp $(INC)/ast.hpp $(INC)/at.hpp
 $(OBJ)/castast.o: $(SRC)/castast.cpp $(INC)/ast.hpp
 	${CC} -c -o $(OBJ)/castast.o $(SRC)/castast.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 	
-$(OBJ)/st.o: $(SRC)/st.cpp $(INC)/ast.hpp $(INC)/st.hpp
+$(OBJ)/st.o: $(SRC)/st.cpp $(INC)/st.hpp $(INC)/ast.hpp
 	${CC} -c -o $(OBJ)/st.o $(SRC)/st.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 
-$(OBJ)/itr.o: $(SRC)/itr.cpp $(INC)/ast.hpp $(INC)/st.hpp
+$(OBJ)/itr.o: $(SRC)/itr.cpp $(INC)/itr.hpp $(INC)/ast.hpp $(INC)/st.hpp
 	${CC} -c -o $(OBJ)/itr.o $(SRC)/itr.cpp -I$(INC) -I$(INC2) ${PARAM} ${LLVMPARAM}
 
 $(OBJ)/parser.o: $(SYN)/parser.y $(INC)/ast.hpp $(INC)/st.hpp $(INC)/util.hpp

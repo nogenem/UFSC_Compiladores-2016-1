@@ -27,14 +27,14 @@ extern AT::ArrayTable arrtab;
 int Block::calcTree(ST::SymbolTable *scope){
 	int value = 0;
 	for(auto& line : _lines){
-		value = line->calcTree(_scope);
+		value = line->calcTree(getScope());
 		if(line->getNodeType() == AST::return_nt){
 			setType(line->getType());
-			scope->removeRefs();
+			getScope()->removeRefs();
 			return value;//retorna o valor do 1* 'return' encontrado
 		}
 	}
-	scope->removeRefs();
+	getScope()->removeRefs();
 	return 0;
 }
 

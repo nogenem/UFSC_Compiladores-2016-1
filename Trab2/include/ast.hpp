@@ -72,6 +72,9 @@ public:
 
 	// list funcs
 	void addLine(Node *line){_lines.push_back(line);}
+
+	// getters
+	ST::SymbolTable* getScope(){return _scope;}
 protected:
 	ST::SymbolTable *_scope;
 	NodeList _lines;
