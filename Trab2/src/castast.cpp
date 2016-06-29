@@ -80,3 +80,11 @@ CondExpr* CondExpr::cast(Node *node){
 	else
 		return nullptr;
 }
+
+WhileExpr* WhileExpr::cast(Node *node){
+	if(node != nullptr &&
+			node->getNodeType() == whileexpr_nt)
+		return dynamic_cast<WhileExpr*>(node);
+	else
+		return nullptr;
+}

@@ -78,13 +78,15 @@ void SymbolTable::addSymbol(std::string id, Symbol *newsymbol){
  * @param exprlist	Lista de expressões
  */
 AST::Node* SymbolTable::declVar(AST::Node *varlist, AST::Node *exprlist){
-	// Apenas declaração, sem atribuição
-	if(exprlist == nullptr){
-		return _newVar(varlist);
-	}else{// Declaração com no minimo uma atribuição
-		_newVar(varlist);
-		return assignVar(varlist, exprlist);
-	}
+	AST::Node* ret = nullptr;
+
+	try{
+		ret = _newVar(varlist);
+		if(exprlist != nullptr)// Declaração com no minimo uma atribuição
+			ret = assignVar(varlist, exprlist);
+	}catch(int e){}
+
+	return ret;
 }
 
 /**
@@ -97,8 +99,7 @@ AST::Node* SymbolTable::_newVar(AST::Node *varlist){
 	auto tmp = AST::Variable::cast(varlist);
 	while(tmp != nullptr){
 		if(checkId(tmp->getId(), true)){
-			Errors::print(Errors::redefinition, tmp->getId());
-			tmp->setError(true);
+			Errors::throwErr(Errors::redefinition, tmp->getId());
 		}else{
 			auto symbol = new Symbol(Types::unknown_t);
 			addSymbol(tmp->getId(), symbol);
@@ -128,9 +129,7 @@ AST::Node* SymbolTable::assignVar(AST::Node *varlist, AST::Node *exprlist){
 	while(var != nullptr){
 		tmp = var;
 		if(expr != nullptr){
-			// Só cria o assign se a variavel não for uma redefinição
-			if(!var->getError())
-				tmp = new AST::BinOp(var,Ops::assign,expr);
+			tmp = new AST::BinOp(var,Ops::assign,expr);
 			// Quabra a sequencia de next da expressão
 			expr = expr->getNext();
 			exprlist->setNext(nullptr);

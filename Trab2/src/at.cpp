@@ -81,7 +81,7 @@ void ArrayTable::minusRef(int addr){
 	auto symbol = getArray(addr);
 	if(symbol != nullptr){
 		int r = symbol->_minusRef();
-		if(r == 0){
+		if(r <= 0){
 			delete symbol;
 			_addrs.erase(addr);
 		}

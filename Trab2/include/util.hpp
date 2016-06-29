@@ -79,5 +79,5 @@ namespace Errors {
 					redefinition, op_wrong_type, div_zero, attempt_index, index_wrong_type,
 					arr_type_not_allowed };
 
-	void print(ErrorType error, ...);
+	void throwErr(ErrorType error, ...);
 }

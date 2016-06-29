@@ -16,7 +16,7 @@ extern void yyerror(const char* s, ...);
 
 /*
 	TODO:
-	
+		botar error no IF e While?
 	
 		adicionar token nil?
 		
@@ -42,7 +42,7 @@ extern void yyerror(const char* s, ...);
 
 %type <block> block fblock fblockend fchunk
 %type <node> line fline assign decl namelist varlist ret
-%type <node> exprlist2 expr expr2 term arrterm cond
+%type <node> exprlist2 expr expr2 term arrterm cond enqt
 
 %left OR_OPT
 %left AND_OPT
@@ -83,12 +83,13 @@ fblockend	: fline ret { $$ = new AST::Block(symtab);
 			;
 
 ret		: RETURN_T expr ';' { $$ = new AST::Return($2); }
+		| RETURN_T ';'		{ $$ = new AST::Return(nullptr); }
 		;
 
 fline   : decl ';'    	{ $$ = $1; }
         | assign ';'  	{ $$ = $1; }
         | cond END_T  	{ $$ = $1; }
-        | enqt END_T  	{ $$ = nullptr; }
+        | enqt END_T  	{ $$ = $1; }
         | func END_T 	{ $$ = nullptr; }
         | error ';'   	{yyerrok; $$ = nullptr; }
         | error END_T 	{yyerrok; $$ = nullptr; }
@@ -115,7 +116,8 @@ cond    : IF_T expr THEN_T newscope fchunk endscope
         	{ $$ = new AST::CondExpr($2, $5, $9); }
         ;
 
-enqt    : WHILE_T expr DO_T fchunk  {}
+enqt    : WHILE_T expr DO_T newscope fchunk endscope  
+			{ $$ = new AST::WhileExpr($2, $5); }
         ;
 
 func    : FUN_T ID_V '(' namelist ')' fchunk  {}

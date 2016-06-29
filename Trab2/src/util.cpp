@@ -27,19 +27,15 @@ Type Types::unType(Ops::Operation op, Type right){
 	switch (op) {
 		case Ops::u_minus:
 			ret = int_t;
-			if(right != int_t){
-				Errors::print(Errors::op_wrong_type, Ops::opName[op],
+			if(right != int_t)
+				Errors::throwErr(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], rtxt);
-				ret = unknown_t;
-			}
 			break;
 		case Ops::u_not:
 			ret = bool_t;
-			if(right != bool_t){
-				Errors::print(Errors::op_wrong_type, Ops::opName[op],
+			if(right != bool_t)
+				Errors::throwErr(Errors::op_wrong_type, Ops::opName[op],
 						mascType[bool_t], rtxt);
-				ret = unknown_t;
-			}
 			break;
 		case Ops::u_paren:
 			ret = right;
@@ -70,16 +66,12 @@ Type Types::binType(Type left, Ops::Operation op, Type right){
 		case Ops::times:
 		case Ops::division:
 			ret = int_t;
-			if(left != int_t){
-				Errors::print(Errors::op_wrong_type, Ops::opName[op],
+			if(left != int_t)
+				Errors::throwErr(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], ltxt);
-				ret = unknown_t;
-			}
-			if(right != int_t){
-				Errors::print(Errors::op_wrong_type, Ops::opName[op],
+			if(right != int_t)
+				Errors::throwErr(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], rtxt);
-				ret = unknown_t;
-			}
 			break;
 
 		case Ops::eq:
@@ -89,31 +81,23 @@ Type Types::binType(Type left, Ops::Operation op, Type right){
 		case Ops::lst:
 		case Ops::lsteq:
 			ret = bool_t;
-			if(left != int_t){
-				Errors::print(Errors::op_wrong_type, Ops::opName[op],
+			if(left != int_t)
+				Errors::throwErr(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], ltxt);
-				ret = unknown_t;
-			}
-			if(right != int_t){
-				Errors::print(Errors::op_wrong_type, Ops::opName[op],
+			if(right != int_t)
+				Errors::throwErr(Errors::op_wrong_type, Ops::opName[op],
 						mascType[int_t], rtxt);
-				ret = unknown_t;
-			}
 			break;
 
 		case Ops::b_and:
 		case Ops::b_or:
 			ret = bool_t;
-			if(left != bool_t){
-				Errors::print(Errors::op_wrong_type, Ops::opName[op],
+			if(left != bool_t)
+				Errors::throwErr(Errors::op_wrong_type, Ops::opName[op],
 						mascType[bool_t], ltxt);
-				ret = unknown_t;
-			}
-			if(right != bool_t){
-				Errors::print(Errors::op_wrong_type, Ops::opName[op],
+			if(right != bool_t)
+				Errors::throwErr(Errors::op_wrong_type, Ops::opName[op],
 						mascType[bool_t], rtxt);
-				ret = unknown_t;
-			}
 			break;
 
 		default: ret = unknown_t;
@@ -131,10 +115,11 @@ using namespace Errors;
  * @param error	Erro que se quer printar
  * @param ...	Valores que serão usados na mensagem de erro
  */
-void Errors::print(ErrorType error, ...){
+void Errors::throwErr(ErrorType error, ...){
 	va_list ap;
 	va_start(ap, error);
 	fprintf(stderr, "[Linha %d] Erro ", yylineno);
 	vfprintf(stderr, messages[error], ap);
 	fprintf(stderr, "\n");
+	throw -1;
 }

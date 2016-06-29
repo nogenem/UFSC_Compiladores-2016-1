@@ -29,7 +29,9 @@ void ITR::execExpr(AST::Node *node, bool print/*=false*/){
 	AST::Node *tmp = node;
 	int v = 0;
 	while(tmp != nullptr){
-		v = tmp->calcTree(symtab);
+		try{
+			v = tmp->calcTree(symtab);
+		}catch(int e){}
 		if(print)
 			_print(v, tmp->getType());
 

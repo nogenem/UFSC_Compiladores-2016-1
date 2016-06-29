@@ -65,12 +65,14 @@ CondExpr::~CondExpr(){
 		delete _elseBranch;
 }
 
-// setters
-void Node::setError(bool err){
-	_error = err;
-	if(err)
-		setType(Types::unknown_t);
+WhileExpr::~WhileExpr(){
+	if(_cond != nullptr)
+		delete _cond;
+	if(_block != nullptr)
+		delete _block;
 }
+
+// setters
 
 // virtual funcs
 /**

@@ -20,7 +20,7 @@ namespace AST {
 
 // Possiveis tipos de nodos
 enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
-	  function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt };
+	  function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt, whileexpr_nt };
 
 class Node;
 
@@ -30,9 +30,9 @@ class Node {
 public:
 	// constructors
 	Node():
-		_type(Types::unknown_t), _next(nullptr), _error(false){}
+		_type(Types::unknown_t), _next(nullptr), _returning(false){}
 	Node(Types::Type type, Node *next):
-		_type(type), _next(next), _error(false){}
+		_type(type), _next(next), _returning(false){}
 	// destructors
 	virtual ~Node();
 
@@ -44,15 +44,17 @@ public:
 	// getters
 	Types::Type getType(){return _type;}
 	Node* getNext(){return _next;}
-	bool getError(){return _error;}
+	bool isReturning(){return _returning;}
 	// setters
 	void setType(Types::Type type){_type=type;}
 	void setNext(Node *next){_next=next;}
-	void setError(bool err);
+	void setReturning(bool value){_returning=value;}
 protected:
 	Types::Type _type;
 	Node* _next;
-	bool _error;
+	// Gambiarra para saber que IF e WHILE
+	//  tão retornando...
+	bool _returning;
 };
 
 class Block : public Node {
@@ -179,7 +181,8 @@ public:
 	// constructors
 	Return(Node *expr):
 		_expr(expr),
-		Node(expr->getType(),nullptr){}
+		Node(expr!=nullptr?expr->getType():Types::unknown_t,
+			 nullptr){}
 	// destructors
 	~Return();
 
@@ -281,6 +284,32 @@ public:
 private:
 	Node *_cond;
 	Block *_thenBranch, *_elseBranch;
+};
+
+class WhileExpr : public Node {
+public:
+	// constructors
+	WhileExpr(Node *cond, Node *block):
+		_cond(cond), _block(Block::cast(block)){}
+
+	// destructors
+	~WhileExpr();
+
+	// virtual funcs
+	int calcTree(ST::SymbolTable *scope);
+	NodeType getNodeType(){return whileexpr_nt;}
+
+	// static funcs
+	static WhileExpr* cast(Node *node);
+
+	// getters
+	Node* getCond(){return _cond;}
+	Block* getBlock(){return _block;}
+	// setters
+
+private:
+	Node *_cond;
+	Block *_block;
 };
 
 }
