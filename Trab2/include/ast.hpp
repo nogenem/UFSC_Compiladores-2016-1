@@ -20,7 +20,7 @@ namespace AST {
 
 // Possiveis tipos de nodos
 enum NodeType { node_nt, block_nt, value_nt, variable_nt, array_nt,
-	  function_nt, return_nt, binop_nt, uniop_nt };
+	  function_nt, return_nt, binop_nt, uniop_nt, condexpr_nt };
 
 class Node;
 
@@ -250,6 +250,34 @@ public:
 protected:
 	Ops::Operation _op;
 	Node *_right;
+};
+
+class CondExpr : public Node {
+public:
+	// constructors
+	CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
+		_cond(cond), _thenBranch(Block::cast(thenBranch)),
+		_elseBranch(Block::cast(elseBranch)){}
+
+	// destructors
+	~CondExpr();
+
+	// virtual funcs
+	int calcTree(ST::SymbolTable *scope);
+	NodeType getNodeType(){return condexpr_nt;}
+
+	// static funcs
+	static CondExpr* cast(Node *node);
+
+	// getters
+	Node* getCond(){return _cond;}
+	Block* getThenBranch(){return _thenBranch;}
+	Block* getElseBranch(){return _elseBranch;}
+	// setters
+
+private:
+	Node *_cond;
+	Block *_thenBranch, *_elseBranch;
 };
 
 }

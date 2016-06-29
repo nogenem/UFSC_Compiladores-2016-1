@@ -1,0 +1,30 @@
+local a = 7;
+if a > 1 then
+	a = a - 5;
+else
+	a = a + 5;
+end
+if a > 1 then
+	local b = {a,a,a};
+	a = b[1] * b[2] * b[3];
+else
+   local b = {-a, -a, -a};
+   a = b[1] + b[2] + b[3];
+end
+a;
+if a > 1 then
+   local b = 5*5;
+   if a == 1 then
+      a = b;
+   else
+      a = a * b;
+   end
+else
+   local b = 5*10;
+   if a == 1 then
+      a = b;
+   else
+      a = a * b;
+   end
+end
+a;

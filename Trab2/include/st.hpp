@@ -60,6 +60,8 @@ public:
 	AST::Node* assignVar(AST::Node *varlist, AST::Node *exprlist);
 	AST::Node* useVar(std::string id, AST::Node *index);
 
+	void removeRefs();
+
 	// getters
 	SymbolTable* getPrevious(){return _previous;}
 	Symbol* getSymbol(std::string id);

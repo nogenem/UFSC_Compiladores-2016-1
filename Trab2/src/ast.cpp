@@ -56,6 +56,15 @@ UniOp::~UniOp(){
     delete _right;
 }
 
+CondExpr::~CondExpr(){
+	if(_cond != nullptr)
+		delete _cond;
+	if(_thenBranch != nullptr)
+		delete _thenBranch;
+	if(_elseBranch != nullptr)
+		delete _elseBranch;
+}
+
 // setters
 void Node::setError(bool err){
 	_error = err;

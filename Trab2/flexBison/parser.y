@@ -42,7 +42,7 @@ extern void yyerror(const char* s, ...);
 
 %type <block> block fblock fblockend fchunk
 %type <node> line fline assign decl namelist varlist ret
-%type <node> exprlist2 expr expr2 term arrterm
+%type <node> exprlist2 expr expr2 term arrterm cond
 
 %left OR_OPT
 %left AND_OPT
@@ -87,11 +87,11 @@ ret		: RETURN_T expr ';' { $$ = new AST::Return($2); }
 
 fline   : decl ';'    	{ $$ = $1; }
         | assign ';'  	{ $$ = $1; }
-        | cond END_T  	{ $$ = nullptr; }
+        | cond END_T  	{ $$ = $1; }
         | enqt END_T  	{ $$ = nullptr; }
         | func END_T 	{ $$ = nullptr; }
-        | error ';'   	{yyerrok;}
-        | error END_T 	{yyerrok;}
+        | error ';'   	{yyerrok; $$ = nullptr; }
+        | error END_T 	{yyerrok; $$ = nullptr; }
         ;
 
 line    : fline       		{ $$ = $1;
@@ -109,8 +109,10 @@ decl    : LOCAL_T namelist ASSIGN_OPT exprlist2	{ $$ = symtab->declVar($2, $4); 
 assign  : varlist ASSIGN_OPT exprlist2 { $$ = symtab->assignVar($1, $3); }
         ;
 
-cond    : IF_T expr THEN_T fchunk   {}
-        | IF_T expr THEN_T fchunk ELSE_T fchunk {}
+cond    : IF_T expr THEN_T newscope fchunk endscope   
+			{ $$ = new AST::CondExpr($2, $5, nullptr); }
+        | IF_T expr THEN_T newscope fchunk endscope ELSE_T newscope fchunk endscope 
+        	{ $$ = new AST::CondExpr($2, $5, $9); }
         ;
 
 enqt    : WHILE_T expr DO_T fchunk  {}
@@ -170,6 +172,12 @@ arrterm : '{' exprlist2 '}'       { $$ = new AST::Array($2); }
         
 functerm	: FUN_T '(' exprlist2 ')' fchunk END_T {}
 			| FUN_T '(' ')' fchunk END_T {}
+			;
+
+newscope	: { symtab = new ST::SymbolTable(symtab); }
+			;
+	
+endscope	: { symtab = symtab->getPrevious(); }
 			;
  
 %%

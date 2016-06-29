@@ -72,3 +72,11 @@ UniOp* UniOp::cast(Node *node){
   else
     return nullptr;
 }
+
+CondExpr* CondExpr::cast(Node *node){
+	if(node != nullptr &&
+			node->getNodeType() == condexpr_nt)
+		return dynamic_cast<CondExpr*>(node);
+	else
+		return nullptr;
+}

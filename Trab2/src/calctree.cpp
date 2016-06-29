@@ -6,6 +6,7 @@
  */
 
 #include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include "../include/ast.hpp"
@@ -29,9 +30,11 @@ int Block::calcTree(ST::SymbolTable *scope){
 		value = line->calcTree(_scope);
 		if(line->getNodeType() == AST::return_nt){
 			setType(line->getType());
+			scope->removeRefs();
 			return value;//retorna o valor do 1* 'return' encontrado
 		}
 	}
+	scope->removeRefs();
 	return 0;
 }
 
@@ -42,20 +45,23 @@ int Variable::calcTree(ST::SymbolTable *scope){
 	auto stype  = hasSymbol?symbol->getType() :Types::unknown_t;
 	auto svalue = hasSymbol?symbol->getValue():0;
 
-	auto index = getIndex();
-	int iv = index!=nullptr?index->calcTree(scope):0;
+	if(!hasSymbol){
+		Errors::print(Errors::without_declaration, getId());
+		setError(true);
+	}
 
+	auto index = getIndex();
 	if(index != nullptr){
+		int iv = index->calcTree(scope);
+
 		if(index->getType() != Types::int_t){
 			Errors::print(Errors::index_wrong_type, Types::mascType[index->getType()]);
 			setError(true);
 		}
-
 		if(stype != Types::arr_t){
 			Errors::print(Errors::attempt_index, getId(), Types::mascType[stype]);
 			setError(true);
 		}
-
 		if(!hasSymbol || getError())
 			return 0;
 
@@ -72,7 +78,7 @@ int Variable::calcTree(ST::SymbolTable *scope){
 			setType(Types::unknown_t);
 
 		return v;
-	}else{
+	}else if(hasSymbol){
 		setType(stype);
 		return svalue;
 	}
@@ -184,7 +190,7 @@ int BinOp::calcTree(ST::SymbolTable *scope){
 		case Ops::division:{
 			if(rv == 0){
 				Errors::print(Errors::div_zero);
-				break;
+				return 0;
 			}else
 				return lv / rv;
 		}case Ops::eq:
@@ -204,9 +210,8 @@ int BinOp::calcTree(ST::SymbolTable *scope){
 		case Ops::times:
 			return lv * rv;
 		default:
-			break;
+			return 0;
 	}
-	return 0;
 }
 
 int UniOp::calcTree(ST::SymbolTable *scope){
@@ -229,7 +234,33 @@ int UniOp::calcTree(ST::SymbolTable *scope){
 		case Ops::u_minus:
 			return -rv;
 		default:
-			break;
+			return 0;
 	}
-	return 0;
+}
+
+int CondExpr::calcTree(ST::SymbolTable *scope){
+	auto cond = getCond();
+	int cv = cond->calcTree(scope);
+
+	if(cond->getType() != Types::bool_t){
+		setError(true);
+		Errors::print(Errors::op_wrong_type, "teste", Types::mascType[Types::bool_t],
+				Types::mascType[cond->getType()]);
+		return 0;
+	}
+
+	Block *branch = nullptr;
+
+	if(cv==0) branch = getElseBranch();
+	else branch = getThenBranch();
+
+	int bv = branch->calcTree(scope);
+
+	if(branch->getError()){
+		setError(true);
+		return 0;
+	}else{
+		setType(branch->getType());
+		return bv;
+	}
 }

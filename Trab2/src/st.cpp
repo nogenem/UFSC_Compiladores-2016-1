@@ -163,18 +163,26 @@ AST::Node* SymbolTable::assignVar(AST::Node *varlist, AST::Node *exprlist){
 AST::Node* SymbolTable::useVar(std::string id, AST::Node *index){
 	Types::Type type = Types::unknown_t;
 	auto symbol = getSymbol(id);
-	bool error = false;
 
 	if(symbol != nullptr)
 		type = symbol->getType();
-	else{
-		Errors::print(Errors::without_declaration, id.c_str());
-		error = true;
-	}
 
-	auto var = new AST::Variable(id,index,nullptr,type,nullptr);
-	var->setError(error);
-	return var;
+	return new AST::Variable(id,index,nullptr,type,nullptr);
+}
+
+/**
+ * Função que diminui em 1 a contagem de referencias de todas
+ *  as variaveis locais dentro deste escopo.
+ * Usada para remover as referencias ao final de um bloco.
+ */
+void SymbolTable::removeRefs(){
+	for(auto& iter : _entryList){
+		auto& symbol = iter.second;
+		if(symbol->getType() == Types::arr_t ||
+				symbol->getType() == Types::func_t){
+			arrtab.minusRef(symbol->getValue());
+		}
+	}
 }
 
 // getters
