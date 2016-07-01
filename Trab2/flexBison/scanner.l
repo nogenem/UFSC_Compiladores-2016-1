@@ -3,6 +3,7 @@
 #include "itr.hpp"
 #include "ast.hpp"
 #include "at.hpp"
+#include "ft.hpp"
 #include "st.hpp"
 #include "parser.hpp"
 

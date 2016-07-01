@@ -4,12 +4,15 @@
 #include "st.hpp"
 #include "util.hpp"
 #include "at.hpp"
+#include "ft.hpp"
 	
 AST::Block *programRoot;
+AST::Node *lastParams=nullptr;
 
 // Tables
 ST::SymbolTable *symtab = new ST::SymbolTable(nullptr);
 AT::ArrayTable arrtab;
+FT::FuncTable functab;
 
 extern int yylex();
 extern void yyerror(const char* s, ...);
@@ -43,6 +46,7 @@ extern void yyerror(const char* s, ...);
 %type <block> block fblock fblockend fchunk
 %type <node> line fline assign decl namelist varlist ret
 %type <node> exprlist2 expr expr2 term arrterm cond enqt
+%type <node> functerm func namelist2
 
 %left OR_OPT
 %left AND_OPT
@@ -90,7 +94,7 @@ fline   : decl ';'    	{ $$ = $1; }
         | assign ';'  	{ $$ = $1; }
         | cond END_T  	{ $$ = $1; }
         | enqt END_T  	{ $$ = $1; }
-        | func END_T 	{ $$ = nullptr; }
+        | func END_T 	{ $$ = $1; }
         | error ';'   	{yyerrok; $$ = nullptr; }
         | error END_T 	{yyerrok; $$ = nullptr; }
         ;
@@ -120,13 +124,23 @@ enqt    : WHILE_T expr DO_T newscope fchunk endscope
 			{ $$ = new AST::WhileExpr($2, $5); }
         ;
 
-func    : FUN_T ID_V '(' namelist ')' fchunk  {}
-        | FUN_T ID_V '(' ')' fchunk           {}
+func    : FUN_T ID_V '(' namelist ')' newscope addparams fchunk endscope  
+			{ auto var = new AST::Variable($2,nullptr,nullptr,Types::unknown_t,nullptr);
+			  auto val = new AST::Function($4, $8);
+			  $$ = symtab->assignVar(var, val); }          
+        | LOCAL_T FUN_T ID_V '(' namelist ')' newscope addparams fchunk endscope  
+        	{ auto var = new AST::Variable($3,nullptr,nullptr,Types::unknown_t,nullptr);
+			  auto val = new AST::Function($5, $9);
+			  $$ = symtab->declVar(var, val); }
         ;
 
-namelist  : ID_V              { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,nullptr); }
-          | ID_V ',' namelist { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,$3); }
-          ;
+namelist  : 		 	{ $$ = nullptr; lastParams = nullptr; }
+		  | namelist2	{ $$ = $1; lastParams = $$; }
+		  ;
+
+namelist2  : ID_V               { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,nullptr); }
+           | ID_V ',' namelist2 { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,$3); }
+           ;
 
 varlist   : ID_V                          { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,nullptr); }
           | ID_V '[' expr ']'             { $$ = new AST::Variable($1,$3,nullptr,Types::unknown_t,nullptr); }
@@ -158,7 +172,7 @@ expr      : term                    { $$ = $1; }
 
 expr2	  : expr 		{ $$ = $1; }
 		  | arrterm 	{ $$ = $1; }
-		  | functerm	{ $$ = nullptr; }
+		  | functerm	{ $$ = $1; }
 		  ;
 
 term    : BOOL_V                 { $$ = new AST::Value($1, Types::bool_t); }
@@ -172,8 +186,12 @@ arrterm : '{' exprlist2 '}'       { $$ = new AST::Array($2); }
         | '{' '}'                 { $$ = new AST::Array(nullptr); }
         ;
         
-functerm	: FUN_T '(' exprlist2 ')' fchunk END_T {}
-			| FUN_T '(' ')' fchunk END_T {}
+functerm	: FUN_T '(' namelist ')' newscope addparams fchunk endscope END_T 
+				{ $$ = new AST::Function($3, $7); }
+			;
+
+addparams	: { if(lastParams != nullptr) 
+					symtab->declVar(lastParams, nullptr); }
 			;
 
 newscope	: { symtab = new ST::SymbolTable(symtab); }

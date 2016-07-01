@@ -149,6 +149,12 @@ public:
 
 	// static funcs
 	static Function* cast(Node *node);
+
+	// getters
+	Node* getParams(){return _params;}
+	Node* getBlock(){return _block;}
+	// setters
+
 protected:
 	Node *_params;
 	Node *_block;

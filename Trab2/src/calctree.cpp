@@ -11,12 +11,14 @@
 
 #include "../include/ast.hpp"
 #include "../include/at.hpp"
+#include "../include/ft.hpp"
 #include "../include/st.hpp"
 #include "../include/util.hpp"
 
 using namespace AST;
 
 extern AT::ArrayTable arrtab;
+extern FT::FuncTable functab;
 
 /**
  * Todas as funções desse arquivo são responsaveis por
@@ -75,6 +77,7 @@ int Variable::calcTree(ST::SymbolTable *scope){
 }
 
 int Value::calcTree(ST::SymbolTable *scope){
+	std::cout << "call of value\n";
 	int value = atoi(_n.c_str());
 	if(_n=="true") value = 1;
 	else if(_n=="false") value = 0;
@@ -83,7 +86,13 @@ int Value::calcTree(ST::SymbolTable *scope){
 }
 
 int Function::calcTree(ST::SymbolTable *scope){
-	return 0;
+	if(getBlock() != nullptr){
+		// Cria um novo simbolo para esta função
+		FT::Symbol* symbol = functab.createFunc(this);
+		return symbol->getAddr();
+	}else{
+		return -1;
+	}
 }
 
 int Array::calcTree(ST::SymbolTable *scope){

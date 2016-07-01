@@ -7,8 +7,6 @@
 
 #include "../include/at.hpp"
 
-
-
 using namespace AT;
 
 // Symbol
