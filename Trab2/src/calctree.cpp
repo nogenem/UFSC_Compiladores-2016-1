@@ -59,9 +59,10 @@ int Variable::calcTree(ST::SymbolTable *scope){
 
 		auto arr = arrtab.getArray(symbol->getValue());
 		auto val = arr->getValue(iv);
-		int v = val!=nullptr?val->calcTree(scope):0;
+		int v = 0;
 
 		if(val != nullptr){
+			v = val->calcTree(scope);
 			setType(val->getType());
 		}else
 			setType(Types::unknown_t);
