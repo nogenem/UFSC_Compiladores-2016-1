@@ -19,6 +19,23 @@ using namespace AST;
 extern AT::ArrayTable arrtab;
 extern FT::FuncTable functab;
 
+
+/**
+ * Problema da cópia do bloco de função:
+ * 	Eu sou obrigado a fazer uma cópia da ST do bloco de funções
+ * 	 para que não ocorra problemas do tipo:
+ * 		local fun = function()
+ * 			local b = c;
+ * 			local c = 5;
+ * 		end;
+ *
+ * 	Só que fazendo isso, blocos internos,
+ * 	 como os do IF, WHILE e outras funções, ficam com um
+ * 	 ponteiro apontando para a versão original da ST
+ * 	 gerando assim outros problemas.
+ */
+
+
 /**
  * Todas as funções desse arquivo são responsaveis por
  *  calcular o valor da sua subarvore, o jeito de calcular
@@ -27,7 +44,14 @@ extern FT::FuncTable functab;
 
 int Block::calcTree(ST::SymbolTable *scope){
 	int value = 0;
+	HasBlock *tmp = nullptr;
 	for(auto& line : _lines){
+		// Gambiarra para resolver problema da cópia
+		//  do bloco de funções [explicado acima]
+		tmp = HasBlock::cast(line);
+		if(tmp != nullptr)
+			tmp->setStPrevious(getScope());
+
 		value = line->calcTree(getScope());
 		if(line->getNodeType() == AST::return_nt || line->isReturning()){
 			setType(line->getType());
@@ -50,10 +74,13 @@ int Variable::calcTree(ST::SymbolTable *scope){
 	auto svalue = symbol->getValue();
 	auto index = getIndex();
 
-	if(index != nullptr && stype != Types::arr_t)
+	if(index != nullptr && stype != Types::arr_t){
+		setType(Types::unknown_t);
 		Errors::throwErr(Errors::attempt_index, getId(), Types::mascType[stype]);
-	else if(wasCalledLikeFunc() && stype != Types::func_t)
+	}else if(wasCalledLikeFunc() && stype != Types::func_t){
+		setType(Types::unknown_t);
 		Errors::throwErr(Errors::attempt_call, getId(), Types::mascType[stype]);
+	}
 
 	if(index != nullptr){
 		return _calcArrVal(scope, symbol);
@@ -116,8 +143,8 @@ int Variable::_calcFuncVal(ST::SymbolTable *scope, ST::Symbol *symbol){
 		// executar bloco
 		tmp = block->calcTree(scope);
 
-		if(block->getType() != Types::int_t &&
-				block->getType() != Types::bool_t){
+		if(block->getType() == Types::func_t ||
+				block->getType() == Types::arr_t){
 			Errors::throwErr(Errors::func_type_not_allowed);
 		}
 

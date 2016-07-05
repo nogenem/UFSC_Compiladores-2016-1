@@ -12,7 +12,7 @@ minV=0 #min version [0-5]
 if [ ! -z $1 ]; then
 	minV=$1
 fi
-maxV=4 #max version [0-5]
+maxV=5 #max version [0-5]
 if [ ! -z $2 ]; then
 	maxV=$2
 fi

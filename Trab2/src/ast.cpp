@@ -75,7 +75,56 @@ WhileExpr::~WhileExpr(){
 		delete _block;
 }
 
+// virtual funcs
+
+/**
+ * Função responsavel por alterar o ponteiro da ST
+ *  'previous' do bloco da função.
+ *
+ * @param prev	Nova ST que sera a 'previous' da ST
+ * 				 do bloco da função.
+ */
+void Function::setStPrevious(ST::SymbolTable *prev){
+	auto st = Block::cast(getBlock())->getScope();
+	st->setPrevious(prev);
+}
+
+/**
+ * Função responsavel por alterar o ponteiro da ST
+ *  'previous' do bloco THEN e ELSE do IF.
+ *
+ * @param prev	Nova ST que sera a 'previous' da ST
+ * 				 do bloco THEN e ELSE.
+ */
+void CondExpr::setStPrevious(ST::SymbolTable *prev){
+	auto st = Block::cast(getThenBranch())->getScope();
+	st->setPrevious(prev);
+	if(getElseBranch() != nullptr){
+		st = Block::cast(getElseBranch())->getScope();
+		st->setPrevious(prev);
+	}
+}
+
+/**
+ * Função responsavel por alterar o ponteiro da ST
+ *  'previous' do bloco do WHILE.
+ *
+ * @param prev	Nova ST que sera a 'previous' da ST
+ * 				 do bloco do WHILE.
+ */
+void WhileExpr::setStPrevious(ST::SymbolTable *prev){
+	auto st = Block::cast(getBlock())->getScope();
+	st->setPrevious(prev);
+}
+
 // other funcs
+
+/**
+ * Função que cria uma cópia do bloco.
+ * Ela cria um novo bloco passando uma nova cópia
+ *  da sua própria ST e então copia todas as suas
+ *  'linhas' para o novo bloco.
+ */
 Block* Block::copy(){
 	Block *b = new Block(this->getScope()->copy());
 	for(auto& line : _lines)

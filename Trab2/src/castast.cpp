@@ -5,7 +5,7 @@
  *      Author: Gilne
  */
 
-#include "ast.hpp"
+#include "../include/ast.hpp"
 
 using namespace AST;
 
@@ -27,7 +27,9 @@ Variable* Variable::cast(Node *node){
 
 Value* Value::cast(Node *node){
   if(node != nullptr &&
-      node->getNodeType() == value_nt)
+      (node->getNodeType() == value_nt ||
+	   node->getNodeType() == function_nt ||
+	   node->getNodeType() == array_nt))
     return dynamic_cast<Value*>(node);
   else
     return nullptr;
@@ -87,4 +89,14 @@ WhileExpr* WhileExpr::cast(Node *node){
 		return dynamic_cast<WhileExpr*>(node);
 	else
 		return nullptr;
+}
+
+HasBlock* HasBlock::cast(Node *node){
+	if(node != nullptr &&
+	  (node->getNodeType() == function_nt ||
+	   node->getNodeType() == condexpr_nt ||
+	   node->getNodeType() == whileexpr_nt))
+	return dynamic_cast<HasBlock*>(node);
+  else
+	return nullptr;
 }

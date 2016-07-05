@@ -61,6 +61,22 @@ protected:
 	bool _returning;
 };
 
+
+// Interface para ser usada em classes
+// que possuem um bloco, como:
+// 		function, condexpr e whileexpr
+// Pequena gambiarra para resolver o problema
+//  da cópia do bloco de função
+//  [explicado em calctree.cpp]
+class HasBlock {
+public:
+	virtual ~HasBlock(){}
+
+	virtual void setStPrevious(ST::SymbolTable *prev) = 0;
+
+	static HasBlock* cast(Node *node);
+};
+
 class Block : public Node {
 public:
 	// constructors
@@ -152,7 +168,7 @@ protected:
 	std::string _n;
 };
 
-class Function : public Value {
+class Function : public Value, public HasBlock {
 public:
 	// constructors
 	Function(Node *params, Node *block):
@@ -164,6 +180,7 @@ public:
 	// virtual funcs
 	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return function_nt;}
+	void setStPrevious(ST::SymbolTable *prev);
 
 	// static funcs
 	static Function* cast(Node *node);
@@ -282,7 +299,7 @@ protected:
 	Node *_right;
 };
 
-class CondExpr : public Node {
+class CondExpr : public Node, public HasBlock {
 public:
 	// constructors
 	CondExpr(Node *cond, Node *thenBranch, Node *elseBranch):
@@ -295,6 +312,7 @@ public:
 	// virtual funcs
 	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return condexpr_nt;}
+	void setStPrevious(ST::SymbolTable *prev);
 
 	// static funcs
 	static CondExpr* cast(Node *node);
@@ -310,7 +328,7 @@ private:
 	Block *_thenBranch, *_elseBranch;
 };
 
-class WhileExpr : public Node {
+class WhileExpr : public Node, public HasBlock {
 public:
 	// constructors
 	WhileExpr(Node *cond, Node *block):
@@ -322,6 +340,7 @@ public:
 	// virtual funcs
 	int calcTree(ST::SymbolTable *scope);
 	NodeType getNodeType(){return whileexpr_nt;}
+	void setStPrevious(ST::SymbolTable *prev);
 
 	// static funcs
 	static WhileExpr* cast(Node *node);

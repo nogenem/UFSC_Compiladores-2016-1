@@ -1,0 +1,37 @@
+local a = function(a,b) return a+b; end;
+local function b(a, b) return a/b; end
+
+a = function(a, b) return a-b; end;
+function b(a, b) return a*b; end
+
+
+a;
+a(2,2);
+b;
+b(2,2);
+
+local fun = function(a, b)
+	local i = 0;
+	while i < 20 do
+		a = a + b;
+		b = a - b;
+		i = i + 1;
+	end
+	return a*b;
+end;
+
+fun(2, 3);
+
+function fun(a,b)
+	local c = function(a,b)
+		if a > b then
+			return a-b;
+		else
+			return b-a;
+		end
+	end;
+	return c(a,b);
+end
+
+fun(2,3);
+fun(3,2);

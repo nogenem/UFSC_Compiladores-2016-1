@@ -89,8 +89,8 @@ fblockend	: fline ret { $$ = new AST::Block(symtab);
 						  $$->addLine($2); }
 			;
 
-ret		: RETURN_T expr ';' { $$ = new AST::Return($2); }
-		| RETURN_T ';'		{ $$ = new AST::Return(nullptr); }
+ret		: RETURN_T expr2 ';' { $$ = new AST::Return($2); }
+		| RETURN_T ';'		 { $$ = new AST::Return(nullptr); }
 		;
 
 fline   : decl ';'    	{ $$ = $1; }
@@ -102,12 +102,12 @@ fline   : decl ';'    	{ $$ = $1; }
         | error END_T 	{yyerrok; $$ = nullptr; }
         ;
 
-line    : fline       		{ $$ = $1;
-							  ITR::execExpr($$,false); }
-        | expr ';'  		{ $$ = $1;
-        					  ITR::execExpr($$,true); }
-        | RETURN_T expr ';' { $$ = new AST::Return($2);
-        					  ITR::execExpr($$,true); }
+line    : fline       		 { $$ = $1;
+							   ITR::execExpr($$,false); }
+        | expr ';'  		 { $$ = $1;
+        					   ITR::execExpr($$,true); }
+        | RETURN_T expr2 ';' { $$ = new AST::Return($2);
+        					   ITR::execExpr($$,true); }
         ;
 
 decl    : LOCAL_T namelist ASSIGN_OPT exprlist2	{ $$ = symtab->declVar($2, $4); }

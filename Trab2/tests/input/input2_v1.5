@@ -1,0 +1,22 @@
+local a = function(a, b)
+	return {a, b};
+end;
+a();
+
+local b = 5;
+b();
+
+function b(a, b)
+	return a+b;
+end
+b(true, 2);
+b(true + 5, 2);
+
+function b(a, b)
+	if a then
+		return a;
+	else
+		return b;
+	end
+end
+b(2,2);
