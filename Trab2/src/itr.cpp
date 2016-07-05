@@ -61,6 +61,9 @@ void ITR::_print(int value, Types::Type type){
 		case Types::arr_t:
 			std::cout << "array";
 			break;
+		case Types::func_t:
+			std::cout << "function";
+			break;
 		default:
 			break;
 	}

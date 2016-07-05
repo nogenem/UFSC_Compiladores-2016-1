@@ -77,7 +77,6 @@ Type Types::binType(Type left, Ops::Operation op, Type right){
 		case Ops::eq:
 		case Ops::neq:
 			ret = bool_t;
-
 			if(left != right)
 				Errors::throwErr(Errors::different_types, Ops::opName[op],
 						ltxt, rtxt);

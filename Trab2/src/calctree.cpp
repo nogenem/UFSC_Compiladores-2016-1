@@ -45,21 +45,32 @@ int Variable::calcTree(ST::SymbolTable *scope){
 	auto symbol = scope->getSymbol(getId());
 
 	if(symbol==nullptr)
-			Errors::throwErr(Errors::without_declaration, getId());
+		Errors::throwErr(Errors::without_declaration, getId());
 
 	auto stype  = symbol->getType();
 	auto svalue = symbol->getValue();
 	auto index = getIndex();
+	auto dparams = getParams();
+
+	if(index != nullptr && stype != Types::arr_t)
+		Errors::throwErr(Errors::attempt_index, getId(), Types::mascType[stype]);
+	else if(wasCalledLikeFunc() && stype != Types::func_t)
+		Errors::throwErr(Errors::attempt_call, getId(), Types::mascType[stype]);
 
 	if(index != nullptr){
+		setType(Types::unknown_t);
+
 		int iv = index->calcTree(scope);
 
 		if(index->getType() != Types::int_t)
 			Errors::throwErr(Errors::index_wrong_type, Types::mascType[index->getType()]);
-		if(stype != Types::arr_t)
-			Errors::throwErr(Errors::attempt_index, getId(), Types::mascType[stype]);
 
 		auto arr = arrtab.getArray(symbol->getValue());
+		if(arr == nullptr){
+			setType(Types::unknown_t);
+			return 0;
+		}
+
 		auto val = arr->getValue(iv);
 		int v = 0;
 
@@ -70,6 +81,43 @@ int Variable::calcTree(ST::SymbolTable *scope){
 			setType(Types::unknown_t);
 
 		return v;
+	}else if(wasCalledLikeFunc()){
+		setType(Types::unknown_t);
+
+		auto fsymbol = functab.getFunc(symbol->getValue());
+		if(fsymbol == nullptr){
+			setType(Types::unknown_t);
+			return 0;
+		}
+
+		auto func = fsymbol->getFunc();
+		auto block = Block::cast(func->getBlock());
+		auto backup = block->getScope();
+
+		auto st = backup->copy();
+		block->setScope(st);//cria uma copia
+
+		// add params na st
+		auto uparams = Variable::cast(func->getParams());
+		int tmp = 0;
+		while(uparams != nullptr){
+			if(dparams != nullptr){
+				tmp = dparams->calcTree(scope);
+				st->setValue(uparams->getId(), tmp, dparams->getType());
+				dparams = dparams->getNext();
+			}else{
+				st->setValue(uparams->getId(), 0, Types::unknown_t);
+			}
+			uparams = Variable::cast(uparams->getNext());
+		}
+
+		// executar bloco
+		tmp = block->calcTree(scope);
+		setType(block->getType());
+		block->setScope(backup);
+
+		// retornar resultado
+		return tmp;
 	}else{
 		setType(stype);
 		return svalue;
@@ -77,7 +125,6 @@ int Variable::calcTree(ST::SymbolTable *scope){
 }
 
 int Value::calcTree(ST::SymbolTable *scope){
-	std::cout << "call of value\n";
 	int value = atoi(_n.c_str());
 	if(_n=="true") value = 1;
 	else if(_n=="false") value = 0;
@@ -90,9 +137,8 @@ int Function::calcTree(ST::SymbolTable *scope){
 		// Cria um novo simbolo para esta função
 		FT::Symbol* symbol = functab.createFunc(this);
 		return symbol->getAddr();
-	}else{
-		return -1;
 	}
+	return 0;
 }
 
 int Array::calcTree(ST::SymbolTable *scope){

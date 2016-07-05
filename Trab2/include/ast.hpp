@@ -77,6 +77,9 @@ public:
 
 	// getters
 	ST::SymbolTable* getScope(){return _scope;}
+
+	// setters
+	void setScope(ST::SymbolTable* st){_scope=st;}
 protected:
 	ST::SymbolTable *_scope;
 	NodeList _lines;
@@ -85,8 +88,10 @@ protected:
 class Variable : public Node {
 public:
 	// constructors
-	Variable(std::string id, Node *index, Node *params, Types::Type type, Node *next):
-		_id(id), _index(index), _params(params), Node(type,next){}
+	Variable(std::string id, Node *index, Node *params, bool calledLikeFunc,
+			Types::Type type, Node *next):
+		_id(id), _index(index), _params(params),
+		_calledLikeFunc(calledLikeFunc), Node(type,next){}
 	// destructors
 	~Variable();
 
@@ -101,6 +106,7 @@ public:
 	const char* getId(){return _id.c_str();}
 	Node* getIndex(){return _index;}
 	Node* getParams(){return _params;}
+	bool wasCalledLikeFunc(){return _calledLikeFunc;}
 	// setters
 	void setId(std::string id){_id=id;}
 	void setIndex(Node *index){_index=index;}
@@ -109,6 +115,8 @@ protected:
 	std::string _id;
 	Node *_index;
 	Node *_params;
+	// Esta variavel foi chamada como uma função?
+	bool _calledLikeFunc;
 };
 
 class Value : public Node {

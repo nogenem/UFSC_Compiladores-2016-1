@@ -7,14 +7,25 @@
 
 #include "../include/st.hpp"
 
+#include <utility>
+
 #include "../include/ast.hpp"
 #include "../include/at.hpp"
+#include "../include/ft.hpp"
 
 extern AT::ArrayTable arrtab;
+extern FT::FuncTable functab;
 
 using namespace ST;
 
 // SYMBOL
+
+// other funcs
+Symbol* Symbol::copy(){
+	Symbol *s = new Symbol();
+	s->setValue(this->getValue(), this->getType());
+	return s;
+}
 
 // setters
 /**
@@ -24,6 +35,25 @@ using namespace ST;
  * @param type		Tipo deste novo valor
  */
 void ST::Symbol::setValue(int value, Types::Type type) {
+	// Checagens para controle de
+	//  referencias
+	_checkArrRef(value, type);
+	_checkFuncRef(value, type);
+
+	_value = value;
+	_type = type;
+}
+
+// other funcs
+
+/**
+ * Função responsavel por fazer o controle de
+ *  referencias a arranjos.
+ *
+ * @param value		Novo valor para o simbolo
+ * @param type		Tipo deste novo valor
+ */
+void Symbol::_checkArrRef(int value, Types::Type type){
 	// Adiciona e remove referencia a arranjos
 	// Pequena proteção contra memory leak
 	if(_type == Types::arr_t){
@@ -36,8 +66,26 @@ void ST::Symbol::setValue(int value, Types::Type type) {
 	}else if(type == Types::arr_t){
 		arrtab.plusRef(value);
 	}
-	_value = value;
-	_type = type;
+}
+
+/**
+ * Função responsavel por fazer o controle de
+ *  referencias a funções.
+ *
+ * @param value		Novo valor para o simbolo
+ * @param type		Tipo deste novo valor
+ */
+void Symbol::_checkFuncRef(int value, Types::Type type){
+	if(_type == Types::func_t){
+		if(type != Types::func_t)
+			functab.minusRef(_value);
+		else if(value != _value){
+			functab.minusRef(_value);
+			functab.plusRef(value);
+		}
+	}else if(type == Types::func_t){
+		functab.plusRef(value);
+	}
 }
 
 // SYMBOLTABLE
@@ -130,7 +178,7 @@ AST::Node* SymbolTable::assignVar(AST::Node *varlist, AST::Node *exprlist){
 		tmp = var;
 		if(expr != nullptr){
 			tmp = new AST::BinOp(var,Ops::assign,expr);
-			// Quabra a sequencia de next da expressão
+			// Quebra a sequencia de next da expressão
 			expr = expr->getNext();
 			exprlist->setNext(nullptr);
 			exprlist = expr;
@@ -156,17 +204,19 @@ AST::Node* SymbolTable::assignVar(AST::Node *varlist, AST::Node *exprlist){
  * Função que cuida do uso de variaveis. Ela tambem faz a
  *  checagem de declaração da variavel.
  *
- * @param id	Id da variavel
- * @param index	Index da variavel, caso seja um arranjo
+ * @param id		Id da variavel
+ * @param index		Index da variavel, caso seja o uso de arranjo
+ * @param params	Parametros da variavel, caso seja o uso de função
  */
-AST::Node* SymbolTable::useVar(std::string id, AST::Node *index){
+AST::Node* SymbolTable::useVar(std::string id, AST::Node *index,
+		AST::Node *params, bool calledLikeFunc/*=false*/){
 	Types::Type type = Types::unknown_t;
 	auto symbol = getSymbol(id);
 
 	if(symbol != nullptr)
 		type = symbol->getType();
 
-	return new AST::Variable(id,index,nullptr,type,nullptr);
+	return new AST::Variable(id,index,params,calledLikeFunc,type,nullptr);
 }
 
 /**
@@ -182,6 +232,15 @@ void SymbolTable::removeRefs(){
 			arrtab.minusRef(symbol->getValue());
 		}
 	}
+}
+
+SymbolTable* SymbolTable::copy(){
+	SymbolTable *st = new SymbolTable(this->_previous);
+	for(auto& iter : _entryList){
+		auto& symbol = iter.second;
+		st->addSymbol(iter.first, symbol->copy());
+	}
+	return st;
 }
 
 // getters
@@ -200,4 +259,12 @@ Symbol* SymbolTable::getSymbol(std::string id){
 		return _previous->getSymbol(id);
 	else
 		return nullptr;
+}
+
+// setters
+void SymbolTable::setValue(std::string id, int value, Types::Type type){
+	auto symbol = getSymbol(id);
+	if(symbol != nullptr){
+		symbol->setValue(value, type);
+	}
 }

@@ -27,16 +27,26 @@ typedef std::map<std::string, Symbol*> SymbolList; //Set of Symbols
 class Symbol {
 public:
 	// constructors
+	Symbol():
+		_type(Types::unknown_t), _value(0){}
+
 	Symbol(Types::Type type):
 		_type(type), _value(0){}
 	// destructors
 	~Symbol(){}
+
+	// other funcs
+	Symbol* copy();
 
 	// getters
 	Types::Type getType(){return _type;}
 	int getValue(){return _value;}
 	// setters
 	void setValue(int value, Types::Type type);
+private:
+	// other funcs
+	void _checkArrRef(int value, Types::Type type);
+	void _checkFuncRef(int value, Types::Type type);
 private:
 	Types::Type _type;
 	// value booleano, inteiro ou 'endereço'
@@ -58,7 +68,10 @@ public:
 
 	AST::Node* declVar(AST::Node *varlist, AST::Node *exprlist);
 	AST::Node* assignVar(AST::Node *varlist, AST::Node *exprlist);
-	AST::Node* useVar(std::string id, AST::Node *index);
+	AST::Node* useVar(std::string id, AST::Node *index, AST::Node *params,
+			bool calledLikeFunc=false);
+
+	SymbolTable* copy();
 
 	void removeRefs();
 
@@ -68,6 +81,7 @@ public:
 	bool isGlobal(){return _previous==nullptr;}
 	// setters
 	void setPrevious(SymbolTable *prev){_previous=prev;}
+	void setValue(std::string id, int value, Types::Type type);
 private:
 	// other funcs
 	AST::Node* _newVar(AST::Node *varlist);

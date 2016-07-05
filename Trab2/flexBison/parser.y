@@ -5,6 +5,7 @@
 #include "util.hpp"
 #include "at.hpp"
 #include "ft.hpp"
+#include <iostream>
 	
 AST::Block *programRoot;
 AST::Node *lastParams=nullptr;
@@ -19,6 +20,8 @@ extern void yyerror(const char* s, ...);
 
 /*
 	TODO:
+		Como saber se ta executando func ou soh printando ela?
+	
 		botar error no IF e While?
 	
 		adicionar token nil?
@@ -125,11 +128,11 @@ enqt    : WHILE_T expr DO_T newscope fchunk endscope
         ;
 
 func    : FUN_T ID_V '(' namelist ')' newscope addparams fchunk endscope  
-			{ auto var = new AST::Variable($2,nullptr,nullptr,Types::unknown_t,nullptr);
+			{ auto var = new AST::Variable($2,nullptr,nullptr,false,Types::unknown_t,nullptr);
 			  auto val = new AST::Function($4, $8);
 			  $$ = symtab->assignVar(var, val); }          
         | LOCAL_T FUN_T ID_V '(' namelist ')' newscope addparams fchunk endscope  
-        	{ auto var = new AST::Variable($3,nullptr,nullptr,Types::unknown_t,nullptr);
+        	{ auto var = new AST::Variable($3,nullptr,nullptr,false,Types::unknown_t,nullptr);
 			  auto val = new AST::Function($5, $9);
 			  $$ = symtab->declVar(var, val); }
         ;
@@ -138,14 +141,14 @@ namelist  : 		 	{ $$ = nullptr; lastParams = nullptr; }
 		  | namelist2	{ $$ = $1; lastParams = $$; }
 		  ;
 
-namelist2  : ID_V               { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,nullptr); }
-           | ID_V ',' namelist2 { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,$3); }
+namelist2  : ID_V               { $$ = new AST::Variable($1,nullptr,nullptr,false,Types::unknown_t,nullptr); }
+           | ID_V ',' namelist2 { $$ = new AST::Variable($1,nullptr,nullptr,false,Types::unknown_t,$3); }
            ;
 
-varlist   : ID_V                          { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,nullptr); }
-          | ID_V '[' expr ']'             { $$ = new AST::Variable($1,$3,nullptr,Types::unknown_t,nullptr); }
-          | ID_V ',' varlist              { $$ = new AST::Variable($1,nullptr,nullptr,Types::unknown_t,$3); }
-          | ID_V '[' expr ']' ',' varlist { $$ = new AST::Variable($1,$3,nullptr,Types::unknown_t,$6); }
+varlist   : ID_V                          { $$ = new AST::Variable($1,nullptr,nullptr,false,Types::unknown_t,nullptr); }
+          | ID_V '[' expr ']'             { $$ = new AST::Variable($1,$3,nullptr,false,Types::unknown_t,nullptr); }
+          | ID_V ',' varlist              { $$ = new AST::Variable($1,nullptr,nullptr,false,Types::unknown_t,$3); }
+          | ID_V '[' expr ']' ',' varlist { $$ = new AST::Variable($1,$3,nullptr,false,Types::unknown_t,$6); }
           ;
           
 exprlist2  : expr2               { $$ = $1; }
@@ -177,9 +180,10 @@ expr2	  : expr 		{ $$ = $1; }
 
 term    : BOOL_V                 { $$ = new AST::Value($1, Types::bool_t); }
         | INT_V                  { $$ = new AST::Value($1, Types::int_t); }
-        | ID_V                   { $$ = symtab->useVar($1, nullptr); }
-        | ID_V '[' expr ']'      { $$ = symtab->useVar($1, $3); }
-        | ID_V '(' exprlist2 ')' { $$ = nullptr; }
+        | ID_V                   { $$ = symtab->useVar($1, nullptr, nullptr); }
+        | ID_V '[' expr ']'      { $$ = symtab->useVar($1, $3, nullptr); }
+        | ID_V '(' exprlist2 ')' { $$ = symtab->useVar($1, nullptr, $3, true); }
+        | ID_V '(' ')'			 { $$ = symtab->useVar($1, nullptr, nullptr, true); }
         ;
 
 arrterm : '{' exprlist2 '}'       { $$ = new AST::Array($2); }
