@@ -6,7 +6,6 @@
  */
 
 #include <cstdlib>
-#include <iostream>
 #include <string>
 
 #include "../include/ast.hpp"
@@ -50,7 +49,6 @@ int Variable::calcTree(ST::SymbolTable *scope){
 	auto stype  = symbol->getType();
 	auto svalue = symbol->getValue();
 	auto index = getIndex();
-	auto dparams = getParams();
 
 	if(index != nullptr && stype != Types::arr_t)
 		Errors::throwErr(Errors::attempt_index, getId(), Types::mascType[stype]);
@@ -58,70 +56,83 @@ int Variable::calcTree(ST::SymbolTable *scope){
 		Errors::throwErr(Errors::attempt_call, getId(), Types::mascType[stype]);
 
 	if(index != nullptr){
-		setType(Types::unknown_t);
-
-		int iv = index->calcTree(scope);
-
-		if(index->getType() != Types::int_t)
-			Errors::throwErr(Errors::index_wrong_type, Types::mascType[index->getType()]);
-
-		auto arr = arrtab.getArray(symbol->getValue());
-		if(arr == nullptr){
-			setType(Types::unknown_t);
-			return 0;
-		}
-
-		auto val = arr->getValue(iv);
-		int v = 0;
-
-		if(val != nullptr){
-			v = val->calcTree(scope);
-			setType(val->getType());
-		}else
-			setType(Types::unknown_t);
-
-		return v;
+		return _calcArrVal(scope, symbol);
 	}else if(wasCalledLikeFunc()){
-		setType(Types::unknown_t);
-
-		auto fsymbol = functab.getFunc(symbol->getValue());
-		if(fsymbol == nullptr){
-			setType(Types::unknown_t);
-			return 0;
-		}
-
-		auto func = fsymbol->getFunc();
-		auto block = Block::cast(func->getBlock());
-		auto backup = block->getScope();
-
-		auto st = backup->copy();
-		block->setScope(st);//cria uma copia
-
-		// add params na st
-		auto uparams = Variable::cast(func->getParams());
-		int tmp = 0;
-		while(uparams != nullptr){
-			if(dparams != nullptr){
-				tmp = dparams->calcTree(scope);
-				st->setValue(uparams->getId(), tmp, dparams->getType());
-				dparams = dparams->getNext();
-			}else{
-				st->setValue(uparams->getId(), 0, Types::unknown_t);
-			}
-			uparams = Variable::cast(uparams->getNext());
-		}
-
-		// executar bloco
-		tmp = block->calcTree(scope);
-		setType(block->getType());
-		block->setScope(backup);
-
-		// retornar resultado
-		return tmp;
+		return _calcFuncVal(scope, symbol);
 	}else{
 		setType(stype);
 		return svalue;
 	}
+}
+
+int Variable::_calcArrVal(ST::SymbolTable *scope, ST::Symbol *symbol){
+	setType(Types::unknown_t);
+
+	auto index = getIndex();
+	int iv = index->calcTree(scope);
+
+	if(index->getType() != Types::int_t)
+		Errors::throwErr(Errors::index_wrong_type, Types::mascType[index->getType()]);
+
+	auto arr = arrtab.getArray(symbol->getValue());
+	if(arr == nullptr) return 0;
+
+	auto val = arr->getValue(iv);
+	int v = 0;
+
+	if(val != nullptr){
+		v = val->calcTree(scope);
+		setType(val->getType());
+	}
+	return v;
+}
+
+int Variable::_calcFuncVal(ST::SymbolTable *scope, ST::Symbol *symbol){
+	setType(Types::unknown_t);
+
+	auto exprs = getParams();//expressões
+	auto func = functab.getFunc(symbol->getValue())
+						->getFunc();
+
+	// cria uma copia do bloco
+	auto block = Block::cast(func->getBlock())->copy();
+	auto st = block->getScope();
+	int tmp = 0;
+
+	try{
+		// add params na st
+		auto dparams = Variable::cast(func->getParams());//parametros declarados
+		while(dparams != nullptr){
+			if(exprs != nullptr){
+				tmp = exprs->calcTree(scope);
+				st->setValue(dparams->getId(), tmp, exprs->getType());
+				exprs = exprs->getNext();
+			}else{
+				st->setValue(dparams->getId(), 0, Types::unknown_t);
+			}
+			dparams = Variable::cast(dparams->getNext());
+		}
+
+		// executar bloco
+		tmp = block->calcTree(scope);
+
+		if(block->getType() != Types::int_t &&
+				block->getType() != Types::bool_t){
+			Errors::throwErr(Errors::func_type_not_allowed);
+		}
+
+		setType(block->getType());
+		delete block;
+	}catch(int e){
+		// Gambiarra para deletar a cópia do bloco
+		//  mesmo que de algum erro no calc dos
+		//  parametros ou do bloco
+		delete block;
+		throw e;
+	}
+
+	// retornar resultado
+	return tmp;
 }
 
 int Value::calcTree(ST::SymbolTable *scope){

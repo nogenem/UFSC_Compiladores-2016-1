@@ -60,7 +60,7 @@ public:
 	SymbolTable(SymbolTable* prev):
 		_previous(prev){}
 	// destructors
-	~SymbolTable(){}
+	~SymbolTable();
 
 	// other funcs
 	bool checkId(std::string id, bool creation=false);

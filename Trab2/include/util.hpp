@@ -75,11 +75,12 @@ namespace Errors {
 			"semantico: arranjos apenas aceitam inteiros ou booleanos.",//arr_type_not_allowed
 			"semantico: operacao %s espera tipos iguais mas recebeu %s e %s.",//different_types
 			"semantico: tentativa de chamar variavel %s (um valor %s).",//attempt_call
+			"semantico: funcoes so podem retornar inteiros ou booleanos.",//func_type_not_allowed
 	};
 
 	enum ErrorType{ syntax_error, unknown_symbol, without_declaration,
 					redefinition, op_wrong_type, div_zero, attempt_index, index_wrong_type,
-					arr_type_not_allowed, different_types, attempt_call };
+					arr_type_not_allowed, different_types, attempt_call, func_type_not_allowed };
 
 	void throwErr(ErrorType error, ...);
 }

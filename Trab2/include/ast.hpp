@@ -13,6 +13,10 @@
 #include "util.hpp"
 
 namespace ST {
+class Symbol;
+} /* namespace ST */
+
+namespace ST {
 class SymbolTable;
 } /* namespace ST */
 
@@ -72,6 +76,9 @@ public:
 	// static funcs
 	static Block* cast(Node *node);
 
+	// other funcs
+	Block* copy();
+
 	// list funcs
 	void addLine(Node *line){_lines.push_back(line);}
 
@@ -111,6 +118,9 @@ public:
 	void setId(std::string id){_id=id;}
 	void setIndex(Node *index){_index=index;}
 	void setParams(Node *params){_params=params;}
+private:
+	int _calcArrVal(ST::SymbolTable *scope, ST::Symbol *symbol);
+	int _calcFuncVal(ST::SymbolTable *scope, ST::Symbol *symbol);
 protected:
 	std::string _id;
 	Node *_index;

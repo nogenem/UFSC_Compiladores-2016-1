@@ -90,6 +90,14 @@ void Symbol::_checkFuncRef(int value, Types::Type type){
 
 // SYMBOLTABLE
 
+// destructors
+SymbolTable::~SymbolTable(){
+	for(auto& iter : _entryList){
+		auto& symbol = iter.second;
+		delete symbol;
+	}
+}
+
 // other funcs
 /**
  * Função responsavel por verificar se uma variavel

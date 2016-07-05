@@ -7,6 +7,8 @@
 
 #include "../include/ast.hpp"
 
+#include "../include/st.hpp"
+
 using namespace AST;
 
 // destructors
@@ -16,8 +18,9 @@ Node::~Node(){
 }
 
 Block::~Block(){
-  for(auto& line : _lines)
-    delete line;
+  /*for(auto& line : _lines)
+    delete line;*/
+	delete _scope;
 }
 
 Variable::~Variable(){
@@ -70,6 +73,15 @@ WhileExpr::~WhileExpr(){
 		delete _cond;
 	if(_block != nullptr)
 		delete _block;
+}
+
+// other funcs
+Block* Block::copy(){
+	Block *b = new Block(this->getScope()->copy());
+	for(auto& line : _lines)
+		b->addLine(line);
+
+	return b;
 }
 
 // setters
