@@ -21,6 +21,8 @@ void yyerror(const char* s, ...);
  /* bool value/type */
 "true"                          {yylval.value = strdup(yytext); return BOOL_V;}
 "false"                         {yylval.value = strdup(yytext); return BOOL_V;}
+ /* nil value */
+"nil"							{yylval.value = strdup(yytext); return NIL_V;}
  /* assign */
 "="                             {return ASSIGN_OPT;}
  /* single character */

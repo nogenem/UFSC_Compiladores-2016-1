@@ -20,11 +20,7 @@ extern void yyerror(const char* s, ...);
 
 /*
 	TODO:
-		Como saber se ta executando func ou soh printando ela?
-	
-		botar error no IF e While?
-	
-		adicionar token nil?
+		botar error no IF, While e Funcs?
 		
 		fazer print de arrays? [muito trampo...]
 */
@@ -40,7 +36,7 @@ extern void yyerror(const char* s, ...);
   Types::Type type;
 }
 
-%token<value> INT_V BOOL_V ID_V
+%token<value> INT_V BOOL_V ID_V NIL_V
 %token RETURN_T END_T FUN_T ASSIGN_OPT LOCAL_T
 %token IF_T THEN_T ELSE_T WHILE_T DO_T
 %token EQ_OPT NEQ_OPT GRT_OPT GRTEQ_OPT LST_OPT LSTEQ_OPT
@@ -180,6 +176,7 @@ expr2	  : expr 		{ $$ = $1; }
 
 term    : BOOL_V                 { $$ = new AST::Value($1, Types::bool_t); }
         | INT_V                  { $$ = new AST::Value($1, Types::int_t); }
+        | NIL_V					 { $$ = new AST::Value($1, Types::unknown_t); }
         | ID_V                   { $$ = symtab->useVar($1, nullptr, nullptr); }
         | ID_V '[' expr ']'      { $$ = symtab->useVar($1, $3, nullptr); }
         | ID_V '(' exprlist2 ')' { $$ = symtab->useVar($1, nullptr, $3, true); }

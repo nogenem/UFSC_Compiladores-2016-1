@@ -72,10 +72,10 @@ namespace Errors {
 			"semantico: divisao por zero.",//div_zero
 			"semantico: tentativa de indexar variavel %s (um valor %s).",//attempt_index
 			"semantico: indice de tipo %s.",//index_wrong_type
-			"semantico: arranjos apenas aceitam inteiros ou booleanos.",//arr_type_not_allowed
+			"semantico: arranjo espera valor inteiro ou booleano mas recebeu %s.",//arr_type_not_allowed
 			"semantico: operacao %s espera tipos iguais mas recebeu %s e %s.",//different_types
 			"semantico: tentativa de chamar variavel %s (um valor %s).",//attempt_call
-			"semantico: funcoes so podem retornar inteiros ou booleanos.",//func_type_not_allowed
+			"semantico: funcao espera retornar inteiro ou booleano mas retornou %s.",//func_type_not_allowed
 	};
 
 	enum ErrorType{ syntax_error, unknown_symbol, without_declaration,

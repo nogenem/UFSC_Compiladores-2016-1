@@ -145,7 +145,8 @@ int Variable::_calcFuncVal(ST::SymbolTable *scope, ST::Symbol *symbol){
 
 		if(block->getType() == Types::func_t ||
 				block->getType() == Types::arr_t){
-			Errors::throwErr(Errors::func_type_not_allowed);
+			Errors::throwErr(Errors::func_type_not_allowed,
+					Types::mascType[block->getType()]);
 		}
 
 		setType(block->getType());
@@ -166,6 +167,7 @@ int Value::calcTree(ST::SymbolTable *scope){
 	int value = atoi(_n.c_str());
 	if(_n=="true") value = 1;
 	else if(_n=="false") value = 0;
+	else if(_n == "nil") value = 0;
 
 	return value;
 }
@@ -190,7 +192,8 @@ int Array::calcTree(ST::SymbolTable *scope){
 		tmp->calcTree(scope);
 		if(tmp->getType() == Types::arr_t || tmp->getType() == Types::func_t){
 			arrtab.minusRef(symbol->getAddr());//deleta a array
-			Errors::throwErr(Errors::arr_type_not_allowed);
+			Errors::throwErr(Errors::arr_type_not_allowed,
+					Types::mascType[tmp->getType()]);
 		}
 
 		symbol->setValue(index, tmp);
