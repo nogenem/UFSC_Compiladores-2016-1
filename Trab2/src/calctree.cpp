@@ -52,7 +52,9 @@ int Block::calcTree(ST::SymbolTable *scope){
 		if(tmp != nullptr)
 			tmp->setStPrevious(getScope());
 
+		line->setReturning(false);
 		value = line->calcTree(getScope());
+
 		if(line->getNodeType() == AST::return_nt || line->isReturning()){
 			setType(line->getType());
 			setReturning(true);
@@ -60,6 +62,7 @@ int Block::calcTree(ST::SymbolTable *scope){
 			return value;//retorna o valor do 1* 'return' encontrado
 		}
 	}
+	setReturning(false);
 	getScope()->removeRefs();
 	return 0;
 }
@@ -143,6 +146,7 @@ int Variable::_calcFuncVal(ST::SymbolTable *scope, ST::Symbol *symbol){
 		// executar bloco
 		tmp = block->calcTree(scope);
 
+		// funções só retornam inteiros ou booleanos
 		if(block->getType() == Types::func_t ||
 				block->getType() == Types::arr_t){
 			Errors::throwErr(Errors::func_type_not_allowed,
@@ -216,13 +220,17 @@ int Return::calcTree(ST::SymbolTable *scope){
 	return value;
 }
 
+/**
+ * Cuida da atribuição a arranjos
+ */
 int BinOp::_calcAssignArr(ST::SymbolTable *scope, Types::Type rtype, int rv){
 	auto var = Variable::cast(getLeft());
 	auto index = var->getIndex();
 	int iv = index->calcTree(scope);
 
 	if(rtype == Types::arr_t)
-		Errors::throwErr(Errors::arr_type_not_allowed);
+		Errors::throwErr(Errors::arr_type_not_allowed,
+				Types::mascType[rtype]);
 
 	auto symbol = scope->getSymbol(var->getId());
 	auto arr = arrtab.getArray(symbol->getValue());
@@ -306,6 +314,8 @@ int UniOp::calcTree(ST::SymbolTable *scope){
 
 int CondExpr::calcTree(ST::SymbolTable *scope){
 	auto cond = getCond();
+	if(cond == nullptr) return 0;
+
 	int cv = cond->calcTree(scope);
 
 	if(cond->getType() != Types::bool_t)
@@ -331,6 +341,8 @@ int WhileExpr::calcTree(ST::SymbolTable *scope){
 	int cv = 0;
 	auto block = getBlock();
 	int bv = 0;
+
+	if(block == nullptr || cond == nullptr) return 0;
 
 	while(true){
 		cv = cond->calcTree(scope);

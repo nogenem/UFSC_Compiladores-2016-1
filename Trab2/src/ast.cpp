@@ -18,9 +18,8 @@ Node::~Node(){
 }
 
 Block::~Block(){
-  /*for(auto& line : _lines)
-    delete line;*/
-	delete _scope;
+	if(_scope != nullptr)
+		delete _scope;
 }
 
 Variable::~Variable(){
@@ -127,9 +126,10 @@ void WhileExpr::setStPrevious(ST::SymbolTable *prev){
  */
 Block* Block::copy(){
 	Block *b = new Block(this->getScope()->copy());
-	for(auto& line : _lines)
+	for(auto& line : _lines){
+		line->setReturning(false);
 		b->addLine(line);
-
+	}
 	return b;
 }
 

@@ -54,8 +54,6 @@ void ST::Symbol::setValue(int value, Types::Type type) {
  * @param type		Tipo deste novo valor
  */
 void Symbol::_checkArrRef(int value, Types::Type type){
-	// Adiciona e remove referencia a arranjos
-	// Pequena proteção contra memory leak
 	if(_type == Types::arr_t){
 		if(type != Types::arr_t)
 			arrtab.minusRef(_value);

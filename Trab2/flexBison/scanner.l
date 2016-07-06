@@ -16,9 +16,9 @@ void yyerror(const char* s, ...);
 %%
 
 [ \t\n\r]                       ; //ignores spaces and new lines
- /* int value/type */
+ /* int value */
 [0-9]+                          {yylval.value = strdup(yytext); return INT_V;}
- /* bool value/type */
+ /* bool value */
 "true"                          {yylval.value = strdup(yytext); return BOOL_V;}
 "false"                         {yylval.value = strdup(yytext); return BOOL_V;}
  /* nil value */

@@ -12,11 +12,6 @@
 namespace AST {
 class Node;
 } /* namespace AST */
-namespace ST {
-class SymbolTable;
-} /* namespace ST */
-
-extern ST::SymbolTable *symtab;
 
 /* Interpreter */
 namespace ITR {

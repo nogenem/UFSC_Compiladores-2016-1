@@ -12,6 +12,8 @@
 
 using namespace ITR;
 
+extern ST::SymbolTable *symtab;
+
 /**
  * Função responsavel por executar e, caso especificado,
  *  printar o resultado da expressão passada

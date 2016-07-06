@@ -142,6 +142,7 @@ protected:
 	Node *_index;
 	Node *_params;
 	// Esta variavel foi chamada como uma função?
+	// Ex: a(); a(2,3); ...
 	bool _calledLikeFunc;
 };
 
