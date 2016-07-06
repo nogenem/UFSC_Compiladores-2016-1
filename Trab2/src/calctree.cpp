@@ -146,7 +146,7 @@ int Variable::_calcFuncVal(ST::SymbolTable *scope, ST::Symbol *symbol){
 		// executar bloco
 		tmp = block->calcTree(scope);
 
-		// funções só retornam inteiros ou booleanos
+		// funções só retornam inteiros, booleanos ou desconhecido
 		if(block->getType() == Types::func_t ||
 				block->getType() == Types::arr_t){
 			Errors::throwErr(Errors::func_type_not_allowed,
