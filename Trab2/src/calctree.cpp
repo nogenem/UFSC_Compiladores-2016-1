@@ -5,14 +5,14 @@
  *      Author: Gilne
  */
 
+#include <ast.hpp>
+#include <at.hpp>
+#include <ft.hpp>
+#include <st.hpp>
+#include <util.hpp>
 #include <cstdlib>
+#include <iostream>
 #include <string>
-
-#include "../include/ast.hpp"
-#include "../include/at.hpp"
-#include "../include/ft.hpp"
-#include "../include/st.hpp"
-#include "../include/util.hpp"
 
 using namespace AST;
 
@@ -190,17 +190,17 @@ int Array::calcTree(ST::SymbolTable *scope){
 	AT::Symbol* symbol = arrtab.createArray();
 	auto tmp = _values;
 	int index = 1;//index começa em 1
+	int v = 0;
 	// Adiciona todos os valores no simbolo da array
 	while(tmp != nullptr){
-		// Executa a expressão só para fazer as verificações
-		tmp->calcTree(scope);
+		v = tmp->calcTree(scope);
 		if(tmp->getType() == Types::arr_t || tmp->getType() == Types::func_t){
 			arrtab.minusRef(symbol->getAddr());//deleta a array
 			Errors::throwErr(Errors::arr_type_not_allowed,
 					Types::mascType[tmp->getType()]);
 		}
 
-		symbol->setValue(index, tmp);
+		symbol->setValue(index, new Value(std::to_string(v), tmp->getType()));
 
 		++index;
 		tmp = tmp->getNext();
@@ -235,7 +235,8 @@ int BinOp::_calcAssignArr(ST::SymbolTable *scope, Types::Type rtype, int rv){
 	auto symbol = scope->getSymbol(var->getId());
 	auto arr = arrtab.getArray(symbol->getValue());
 
-	arr->setValue(iv, getRight());
+	auto val = new Value(std::to_string(rv), rtype);
+	arr->setValue(iv, val);
 
 	return rv;
 }

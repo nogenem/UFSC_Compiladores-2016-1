@@ -22,7 +22,7 @@ public:
 		_addr(addr), _refs(0){ }
 
 	// destructors
-	~Symbol(){  }
+	~Symbol();
 
 	// getters
 	AST::Node* getValue(int index);

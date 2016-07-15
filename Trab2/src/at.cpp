@@ -7,10 +7,19 @@
 
 #include "../include/at.hpp"
 
+#include <iostream>
+
 
 using namespace AT;
 
 // Symbol
+
+// destructors
+Symbol::~Symbol(){
+	for(auto& iter : _values){
+		delete iter.second;
+	}
+}
 
 // getters
 /**
@@ -33,6 +42,9 @@ AST::Node* Symbol::getValue(int index){
  * @param value	Novo valor
  */
 void Symbol::setValue(int index, AST::Node *value){
+	if(_values.find(index) != _values.end()){
+		delete _values[index];
+	}
 	_values[index] = value;
 }
 

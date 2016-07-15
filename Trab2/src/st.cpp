@@ -91,8 +91,7 @@ void Symbol::_checkFuncRef(int value, Types::Type type){
 // destructors
 SymbolTable::~SymbolTable(){
 	for(auto& iter : _entryList){
-		auto& symbol = iter.second;
-		delete symbol;
+		delete iter.second;
 	}
 }
 
