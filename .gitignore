@@ -1,4 +1,8 @@
-﻿# Testes
+﻿#CODE
+.settings/
+.vscode/
+
+# Testes
 */tests/Resumo.txt
 
 # Compiled Object files
